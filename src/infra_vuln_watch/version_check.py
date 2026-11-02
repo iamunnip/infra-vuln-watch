@@ -155,6 +155,36 @@ def ranges_from_affected(cve, vendor, product):
     return ranges, could_not_read, products_seen
 
 
+def describe_range(version_range):
+    """Turn a range into text like ">= 2.2.0 and < 2.6.4"."""
+    start = version_range["start"]
+    end = version_range["end"]
+
+    if start is None and end is None:
+        return "All versions"
+    if start is not None and start == end:
+        return str(start)
+
+    parts = []
+    if start is not None:
+        parts.append(f"{'>=' if version_range['start_included'] else '>'} {start}")
+    if end is not None:
+        parts.append(f"{'<=' if version_range['end_included'] else '<'} {end}")
+    return " and ".join(parts)
+
+
+def list_affected_versions(ranges, installed):
+    """Return each affected range once, lowest first, and say if it includes us."""
+    def lowest_first(version_range):
+        return version_range["end"] or version_range["start"] or Version("0")
+
+    versions = {}
+    for version_range in sorted(ranges, key=lowest_first):
+        text = describe_range(version_range)
+        versions[text] = versions.get(text, False) or is_in_range(installed, version_range)
+    return [{"text": text, "includes_installed": found} for text, found in versions.items()]
+
+
 def fix_text(matching_ranges):
     """Describe the fix, using the highest end version so that every range is cleared."""
     with_end = [r for r in matching_ranges if r["end"] is not None]
@@ -168,7 +198,7 @@ def fix_text(matching_ranges):
 
 
 def check_version(cve, vendor, product, installed_version):
-    """Return {"status": ..., "fix": ...} for this CVE and installed version.
+    """Return the status, fix and affected versions for this CVE and installed version.
 
     When NVD does not give us enough to decide, the status is UNKNOWN. We report
     those for a human to check, because hiding a real vulnerability is worse
@@ -181,25 +211,30 @@ def check_version(cve, vendor, product, installed_version):
     could_not_read = config_unread or affected_unread
     installed = Version(installed_version)
 
+    affected_versions = list_affected_versions(ranges, installed)
+
+    def answer(status, fix=None):
+        return {"status": status, "fix": fix, "affected_versions": affected_versions}
+
     matching = [r for r in ranges if is_in_range(installed, r)]
     if matching:
-        return {"status": AFFECTED, "fix": fix_text(matching)}
+        return answer(AFFECTED, fix_text(matching))
 
     if could_not_read:
-        return {"status": UNKNOWN, "fix": None}
+        return answer(UNKNOWN)
 
     # Our product is listed and our version is outside every listed range.
     if ranges:
-        return {"status": NOT_AFFECTED, "fix": None}
+        return answer(NOT_AFFECTED)
 
     # NVD lists products, but ours has no version data or is not one of them.
     if config_seen or affected_seen:
         if product_is_listed(cve, vendor, product):
-            return {"status": UNKNOWN, "fix": None}
-        return {"status": NOT_AFFECTED, "fix": None}
+            return answer(UNKNOWN)
+        return answer(NOT_AFFECTED)
 
     # No product data at all, so the keyword match is the only clue we have.
-    return {"status": UNKNOWN, "fix": None}
+    return answer(UNKNOWN)
 
 
 def product_is_listed(cve, vendor, product):

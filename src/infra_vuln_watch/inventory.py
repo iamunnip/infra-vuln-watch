@@ -5,7 +5,7 @@ from pathlib import Path
 import yaml
 from packaging.version import InvalidVersion, Version
 
-REQUIRED_FIELDS = ["name", "repo", "version", "owner", "vendor", "product"]
+REQUIRED_FIELDS = ["name", "repo", "version", "team", "owner", "vendor", "product"]
 
 
 def load_item(path):

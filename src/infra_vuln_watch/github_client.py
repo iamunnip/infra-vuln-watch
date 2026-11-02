@@ -8,13 +8,13 @@ import requests
 API_URL = "https://api.github.com"
 MAIN_LABEL = "vuln-watch"
 REVIEW_LABEL = "needs-review"
+KNOWN_EXPLOITED_LABEL = "known-exploited"
 TOOL_LABEL_COLOR = "1d76db"
 SEVERITY_LABELS = {
     "critical": "b60205",
     "high": "d93f0b",
     "medium": "fbca04",
     "low": "0e8a16",
-    "none": "c5def5",
     "unknown": "bfd4f2",
 }
 
@@ -60,7 +60,7 @@ class GitHubClient:
         """Create any of our labels that do not exist yet."""
         existing = {label["name"] for label in self.get_all_pages("labels", {})}
 
-        wanted = {MAIN_LABEL: "5319e7", REVIEW_LABEL: "e99695"}
+        wanted = {MAIN_LABEL: "5319e7", REVIEW_LABEL: "e99695", KNOWN_EXPLOITED_LABEL: "b60205"}
         for severity, color in SEVERITY_LABELS.items():
             wanted[severity_label(severity)] = color
         for name in tool_names:

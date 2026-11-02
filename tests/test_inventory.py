@@ -4,7 +4,7 @@ import pytest
 
 from infra_vuln_watch.inventory import load_inventory, load_item
 
-GOOD = 'name: a\nrepo: o/a\nversion: "1.2.3"\nowner: me\nvendor: o\nproduct: a\n'
+GOOD = 'name: a\nrepo: o/a\nversion: "1.2.3"\nteam: sre\nowner: me\nvendor: o\nproduct: a\n'
 
 
 def write(tmp_path, text):
@@ -48,3 +48,8 @@ def test_duplicate_names_are_rejected(tmp_path):
     (tmp_path / "two.yaml").write_text(GOOD)
     with pytest.raises(ValueError, match="Two inventory files"):
         load_inventory(tmp_path)
+
+
+def test_team_is_required(tmp_path):
+    with pytest.raises(ValueError, match="team"):
+        load_item(write(tmp_path, GOOD.replace("team: sre\n", "")))
