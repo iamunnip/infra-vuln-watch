@@ -15,3 +15,7 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0007](0007-scan-twice-a-day.md) | Scan twice a day | Accepted |
 | [0008](0008-issue-title-format.md) | Issue title format | Replaced by 0009 |
 | [0009](0009-issue-title-and-labels.md) | Issue title and labels | Accepted |
+| [0010](0010-fix-deadlines-by-severity.md) | Fix deadlines by severity | Accepted |
+| [0011](0011-severity-comes-from-the-score.md) | Severity comes from the CVSS score | Accepted |
+| [0012](0012-add-epss-and-cisa-kev.md) | Add EPSS and CISA KEV | Accepted |
+| [0013](0013-how-a-vulnerability-gets-fixed.md) | How a vulnerability gets fixed | Accepted |

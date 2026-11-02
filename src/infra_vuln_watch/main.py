@@ -10,7 +10,7 @@ import os
 
 import requests
 
-from infra_vuln_watch import cve_details, github_client, issue_format, nvd_client
+from infra_vuln_watch import cve_details, github_client, issue_format, nvd_client, risk_data
 from infra_vuln_watch.inventory import load_inventory
 from infra_vuln_watch.version_check import NOT_AFFECTED, UNKNOWN, check_version
 
@@ -21,13 +21,16 @@ def find_problems(item):
     for cve in nvd_client.fetch_cves(item):
         if cve.get("vulnStatus") == "Rejected":
             continue
+        # A CVSS score of 0.0 means there is no real risk, so there is nothing to fix.
+        if cve_details.get_score(cve)["severity"] == "none":
+            continue
         result = check_version(cve, item["vendor"], item["product"], item["version"])
         if result["status"] != NOT_AFFECTED:
             problems.append((cve, result))
     return problems
 
 
-def report(item, cve, result, github, reported_ids):
+def report(item, cve, result, risk, github, reported_ids):
     """Open an issue for one CVE, or print it during a dry run."""
     marker_id = f"{item['name']}/{cve['id']}"
     if marker_id in reported_ids:
@@ -48,7 +51,10 @@ def report(item, cve, result, github, reported_ids):
     if result["status"] == UNKNOWN:
         labels.append(github_client.REVIEW_LABEL)
 
-    url = github.create_issue(title, issue_format.make_body(item, cve, result), labels)
+    if risk_data.find_kev_entry(cve, risk["kev"]):
+        labels.append(github_client.KNOWN_EXPLOITED_LABEL)
+
+    url = github.create_issue(title, issue_format.make_body(item, cve, result, risk), labels)
     reported_ids.add(marker_id)
     print(f"  Opened {url}")
 
@@ -85,13 +91,17 @@ def main():
     # One failing item should not stop the others from being checked. The run
     # still fails at the end, so a broken check never looks like "no CVEs found".
     failed = []
+    kev = risk_data.fetch_kev()
     for item in items:
         print(f"Checking {item['name']} {item['version']}")
         try:
             problems = find_problems(item)
             print(f"  Found {len(problems)} CVE(s) to report")
+            # Only new issues need EPSS scores, so we do not ask for the others.
+            new_ids = [cve["id"] for cve, _ in problems if f"{item['name']}/{cve['id']}" not in reported_ids]
+            risk = {"kev": kev, "epss": risk_data.fetch_epss(new_ids)}
             for cve, result in problems:
-                report(item, cve, result, github, reported_ids)
+                report(item, cve, result, risk, github, reported_ids)
         except requests.RequestException as error:
             print(f"  FAILED: {error}")
             failed.append(item["name"])

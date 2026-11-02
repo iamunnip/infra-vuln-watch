@@ -9,9 +9,46 @@ MAX_SUMMARY_LENGTH = 120
 ATTACK_FIELDS = {
     "attackVector": "Attack from",
     "attackComplexity": "Attack complexity",
+    "attackRequirements": "Attack requirements",
     "privilegesRequired": "Privileges needed",
     "userInteraction": "User interaction",
 }
+
+# CVSS 4.0 and CVSS 3 use different names for the same three impacts.
+IMPACT_FIELDS = {
+    "Confidentiality impact": ["vulnConfidentialityImpact", "confidentialityImpact"],
+    "Integrity impact": ["vulnIntegrityImpact", "integrityImpact"],
+    "Availability impact": ["vulnAvailabilityImpact", "availabilityImpact"],
+}
+
+
+def readable(value):
+    """Turn NVD text like ADJACENT_NETWORK into Adjacent network."""
+    return str(value).replace("_", " ").capitalize()
+
+
+def severity_from_score(score):
+    """Turn a CVSS score into a severity name, using one scale for every CVSS version."""
+    if score == 0:
+        return "none"
+    if score < 4:
+        return "low"
+    if score < 7:
+        return "medium"
+    if score < 9:
+        return "high"
+    return "critical"
+
+
+def get_impact(data):
+    """Return what an attacker could affect, from the CVSS data."""
+    impact = {}
+    for label, fields in IMPACT_FIELDS.items():
+        for field in fields:
+            if field in data:
+                impact[label] = readable(data[field])
+                break
+    return impact
 
 
 def get_score(cve):
@@ -28,19 +65,19 @@ def get_score(cve):
         entry = primary[0] if primary else entries[0]
         data = entry["cvssData"]
         return {
-            # CVSS v2 keeps the severity outside of cvssData.
-            "severity": (data.get("baseSeverity") or entry.get("baseSeverity") or "unknown").lower(),
+            "severity": severity_from_score(data["baseScore"]),
             "score": str(data["baseScore"]),
             "cvss_version": data.get("version", "unknown"),
             "vector": data.get("vectorString", "unknown"),
             "attack": {
-                label: data[field].replace("_", " ").capitalize()
+                label: readable(data[field])
                 for field, label in ATTACK_FIELDS.items()
                 if field in data
             },
+            "impact": get_impact(data),
         }
 
-    return {"severity": "unknown", "score": "n/a", "cvss_version": "n/a", "vector": "n/a", "attack": {}}
+    return {"severity": "unknown", "score": "n/a", "cvss_version": "n/a", "vector": "n/a", "attack": {}, "impact": {}}
 
 
 def get_description(cve):
@@ -88,3 +125,40 @@ def get_references(cve):
         if url.startswith(("https://", "http://")):
             found.setdefault(url, []).extend(reference.get("tags", []))
     return [{"url": url, "tags": tags} for url, tags in found.items()]
+
+
+def get_all_scores(cve):
+    """Return every CVSS score of a CVE, like ["4.0: 2.1 (Low)", "3.1: 3.3 (Low)"], without duplicates."""
+    metrics = cve.get("metrics", {})
+    scores = []
+    for key in CVSS_KEYS:
+        for entry in metrics.get(key, []):
+            data = entry["cvssData"]
+            severity = readable(severity_from_score(data["baseScore"]))
+            text = f"{data.get('version', '?')}: {data['baseScore']} ({severity})"
+            if text not in scores:
+                scores.append(text)
+    return scores
+
+
+def get_exploit_status(cve):
+    """Return the SSVC assessment of a CVE, as label and value pairs."""
+    status = {}
+
+    # SSVC is a separate assessment of how urgent a CVE is.
+    ssvc_entries = cve.get("metrics", {}).get("ssvcV203", [])
+    if ssvc_entries:
+        ssvc = ssvc_entries[0].get("ssvcData", {})
+        options = {}
+        for option in ssvc.get("options", []):
+            options.update(option)
+        if "exploitation" in options:
+            status["Exploitation seen"] = readable(options["exploitation"])
+        if "automatable" in options:
+            status["Can be automated"] = readable(options["automatable"])
+        if "technicalImpact" in options:
+            status["Technical impact"] = readable(options["technicalImpact"])
+        if ssvc.get("timestamp"):
+            status["Assessed on"] = ssvc["timestamp"][:10]
+
+    return status

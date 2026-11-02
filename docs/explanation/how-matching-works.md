@@ -20,7 +20,7 @@ CVE for the product and compares versions itself.
 
 ```mermaid
 flowchart TD
-    start[CVE from NVD] --> rejected{Rejected by NVD?}
+    start[CVE from NVD] --> rejected{Rejected by NVD, or scored 0.0?}
     rejected -->|Yes| none[No issue]
     rejected -->|No| inrange{Version inside a listed range?}
     inrange -->|Yes| affected[Affected: open issue]
@@ -41,8 +41,24 @@ flowchart TD
 | Not affected | Ranges exist and the version is outside them, or the CVE is about another product | No issue |
 | Unknown | The data is missing or cannot be read | Issue with `needs-review` |
 
+A CVE that NVD rejected, or that has a CVSS score of 0.0, never gets an issue. A CVE with no score
+at all still does, because no score does not mean no risk.
+
 Unknown opens an issue on purpose. A false alarm costs a minute of someone's time, while a
 hidden vulnerability can cost far more.
+
+## Severity, likelihood and urgency
+
+Matching decides whether a CVE gets an issue. CVSS, EPSS and CISA KEV then help you decide what to
+fix first, and they answer different questions. A CVE can have a high CVSS score and almost no
+chance of attack, so a high score alone does not make it the most urgent. If EPSS or KEV is down the
+issue still opens, because knowing about a CVE matters more than having every detail.
+
+## Why deadlines start when the issue opens
+
+Each severity has a fix window. The clock starts when the issue opens and not when the CVE was
+published, because some CVEs are published long before they are found here. Counting from
+publication would make them overdue before anyone had seen them.
 
 ## Limits
 
@@ -51,6 +67,7 @@ hidden vulnerability can cost far more.
 - A CVE that NVD has not published, or that names a different vendor or product than your
   inventory file, will not be matched.
 - It does not check the libraries inside a tool.
+- An issue does not change after it opens, so a CVE added to the KEV list later is not flagged.
 
 See also [ADR 0002](../../adr/0002-search-nvd-twice-and-compare-versions-locally.md) and
 [ADR 0003](../../adr/0003-report-unknown-results.md).

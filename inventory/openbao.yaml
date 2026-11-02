@@ -4,6 +4,7 @@ name: openbao
 display_name: OpenBao
 repo: openbao/openbao
 version: "2.5.5"
+team: sre
 owner: iamunnip
 vendor: openbao
 product: openbao

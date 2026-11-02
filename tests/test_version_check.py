@@ -87,3 +87,16 @@ def test_placeholder_start_with_an_end_is_a_real_range():
 
 def test_placeholder_alone_is_unknown():
     assert status(affected_cve([{"version": "0", "status": "affected"}]), "1.0") == UNKNOWN
+
+
+def test_all_affected_versions_are_listed_lowest_first():
+    versions = check_version(TWO_BRANCHES, "openbao", "openbao", "2.5.0")["affected_versions"]
+    assert versions == [
+        {"text": ">= 2.2.0 and < 2.6.4", "includes_installed": True},
+        {"text": ">= 2.7.0 and < 2.7.1", "includes_installed": False},
+    ]
+
+
+def test_the_same_range_from_two_sources_is_listed_once():
+    cve = {**cpe_cve(versionEndExcluding="2.0.0"), **affected_cve([{"version": "< 2.0.0", "status": "affected"}])}
+    assert [v["text"] for v in check_version(cve, "openbao", "openbao", "1.0.0")["affected_versions"]] == ["< 2.0.0"]
