@@ -1,5 +1,7 @@
 # One file per tool. See docs/reference/inventory-format.md for every field.
+# This is a demo version, kept old on purpose to show the tool finding real CVEs.
 name: openbao
+display_name: OpenBao
 repo: openbao/openbao
 version: "2.5.5"
 owner: iamunnip

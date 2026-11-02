@@ -13,8 +13,10 @@ def write(tmp_path, text):
     return path
 
 
-def test_good_file_defaults_keyword_to_name(tmp_path):
-    assert load_item(write(tmp_path, GOOD))["keyword"] == "a"
+def test_good_file_defaults_keyword_and_display_name_to_name(tmp_path):
+    item = load_item(write(tmp_path, GOOD))
+    assert item["keyword"] == "a"
+    assert item["display_name"] == "a"
 
 
 def test_missing_field(tmp_path):

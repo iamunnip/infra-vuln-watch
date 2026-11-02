@@ -47,7 +47,8 @@ def test_opens_issues_only_for_new_cves_that_affect_us(inventory, github, monkey
 
     assert main.main() == 0
     assert len(titles(github)) == 1
-    assert "cve-new" in titles(github)[0]
+    assert "CVE-NEW" in titles(github)[0]
+    assert "tool-tool" in github.create_issue.call_args.args[2]
 
 
 def test_unconfirmed_cve_gets_the_review_label(inventory, github, monkeypatch):
@@ -87,7 +88,7 @@ def test_dry_run_opens_nothing_and_needs_no_token(inventory, monkeypatch, capsys
 
     assert main.main() == 0
     client.assert_not_called()
-    assert "cve-new" in capsys.readouterr().out
+    assert "CVE-NEW" in capsys.readouterr().out
 
 
 def test_missing_token_is_an_error(inventory, monkeypatch):
