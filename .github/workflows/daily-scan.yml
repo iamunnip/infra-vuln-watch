@@ -1,0 +1,35 @@
+name: daily-scan
+
+on:
+  schedule:
+    # Cron uses UTC. 18:30 UTC is 00:00 IST and 06:30 UTC is 12:00 IST.
+    - cron: "30 6,18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: pip install .
+
+      - name: Check inventory against NVD
+        run: python -m infra_vuln_watch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
