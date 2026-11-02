@@ -3,6 +3,11 @@ name: scan
 on:
   workflow_dispatch:
 
+# Run one scan at a time. Two scans together could open the same new issue twice.
+concurrency:
+  group: scan
+  cancel-in-progress: false
+
 permissions:
   contents: read
   issues: write

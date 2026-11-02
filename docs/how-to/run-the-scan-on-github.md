@@ -16,5 +16,9 @@ you run it.
 ## Good to know
 
 - The workflow can write issues because it asks for `issues: write`, so no extra token is needed.
-- Running it often is safe, because a CVE that is already reported is skipped.
+- A CVE that is already reported is skipped, so running the scan again opens no duplicates.
+- Only one scan runs at a time. If you start another, it waits for the first to finish. At most one
+  can wait, and a newer one replaces it.
+- About once a day is plenty, because new CVEs do not appear that fast and each scan uses NVD's
+  rate limit.
 - A failed NVD or GitHub request makes the run fail. A green run means every tool was checked.

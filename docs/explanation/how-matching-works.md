@@ -67,6 +67,12 @@ Each severity has a fix window. The clock starts when the issue opens and not wh
 published, because some CVEs are published long before they are found here. Counting from
 publication would make them overdue before anyone had seen them.
 
+## Why only one scan runs at a time
+
+Each scan reads the list of reported CVEs once, when it starts. Two scans running together would not
+see each other's new issues, so both could open the same one. The workflow makes the second scan
+wait, so it reads the list after the first has finished.
+
 ## Limits
 
 - The tool knows versions, not how you use the tool. An affected version may not be exploitable

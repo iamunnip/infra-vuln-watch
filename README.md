@@ -4,7 +4,7 @@
 
 CVE scan of infrastructure inventory.
 
-When you start it, a GitHub Action checks each tool in `inventory/` against the
+When you start it, a GitHub Action checks each tool in `inventory/`, one scan at a time, against the
 [National Vulnerability Database](https://nvd.nist.gov/) (NVD). When the installed version
 is affected, it opens an issue in this repo:
 

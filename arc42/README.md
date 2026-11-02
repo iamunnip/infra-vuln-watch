@@ -137,7 +137,8 @@ stateDiagram-v2
 
 `.github/workflows/tests.yml` runs the tests on each push and pull request.
 
-`.github/workflows/scan.yml` runs the scan on a GitHub hosted runner when someone starts it.
+`.github/workflows/scan.yml` runs the scan on a GitHub hosted runner when someone starts it, one
+scan at a time.
 Settings are `GITHUB_TOKEN`, provided by Actions, and
 `NVD_API_KEY`, an optional secret.
 
@@ -145,7 +146,7 @@ Settings are `GITHUB_TOKEN`, provided by Actions, and
 
 - **Untrusted input:** CVE text can be written by anyone. It is cleaned before it reaches an
   issue, so it cannot mention users or fake the marker.
-- **Duplicate protection:** each issue holds a hidden `vuln-watch-id`. Only issues with the
+- **Duplicate protection:** only one scan runs at a time, and each issue holds a hidden `vuln-watch-id`. Only issues with the
   `vuln-watch` label are trusted, because strangers cannot add labels in a public repo.
 - **Least privilege:** the workflow token can only read code and write issues. Actions are
   pinned to commit SHAs.
@@ -163,6 +164,7 @@ See the [ADR list](../adr/README.md).
 | --- | --- |
 | NVD is down during a run | Retries, then the run fails and shows red |
 | The scan runs twice in a day | No duplicate issues |
+| A scan is started while another is running | It waits, then opens no duplicate issues |
 | An owner closes an issue | It is not reopened |
 | An upgrade is merged | The next scan stops reporting the fixed CVEs |
 | A CVE has no version data | An issue with `needs-review` is opened |
