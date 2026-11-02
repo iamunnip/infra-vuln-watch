@@ -1,9 +1,6 @@
-name: daily-scan
+name: scan
 
 on:
-  schedule:
-    # Cron uses UTC. 18:30 UTC is 00:00 IST and 06:30 UTC is 12:00 IST.
-    - cron: "30 6,18 * * *"
   workflow_dispatch:
 
 permissions:

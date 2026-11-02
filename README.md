@@ -2,9 +2,9 @@
 
 [![tests](https://github.com/iamunnip/infra-vuln-watch/actions/workflows/tests.yml/badge.svg)](https://github.com/iamunnip/infra-vuln-watch/actions/workflows/tests.yml)
 
-Daily CVE scan of infrastructure inventory.
+CVE scan of infrastructure inventory.
 
-Twice a day, at 00:00 and 12:00 IST, a GitHub Action checks each tool in `inventory/` against the
+When you start it, a GitHub Action checks each tool in `inventory/` against the
 [National Vulnerability Database](https://nvd.nist.gov/) (NVD). When the installed version
 is affected, it opens an issue in this repo:
 
@@ -46,7 +46,7 @@ the full reasoning.
 
 ```mermaid
 flowchart LR
-    schedule[GitHub Action at 00:00 and 12:00 IST] --> scan["infra_vuln_watch"]
+    start[Run by hand in GitHub Actions] --> scan["infra_vuln_watch"]
     inventory["inventory/*.yaml"] --> scan
     nvd[NVD CVE API] --> scan
     scan --> check{Installed version affected?}
@@ -75,7 +75,7 @@ python -m venv .venv
 | `src/infra_vuln_watch/` | The Python package, one file per job |
 | `tests/` | Unit tests, run with `pytest` |
 | `pyproject.toml` | Project settings and dependencies |
-| `.github/workflows/` | The daily schedule |
+| `.github/workflows/` | The scan, started by hand, and the tests |
 | [`docs/`](docs/README.md) | User docs, organised with Diataxis |
 | [`knowledge/`](knowledge/index.md) | Domain knowledge, as an OKF bundle |
 | [`arc42/`](arc42/README.md) | Architecture description |
