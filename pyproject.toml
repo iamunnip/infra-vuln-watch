@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "infra-vuln-watch"
+version = "0.1.0"
+description = "Daily CVE scan of infrastructure inventory"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "packaging==26.3",
+    "PyYAML==6.0.3",
+    "requests==2.34.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.2.0"]
+
+[project.scripts]
+infra-vuln-watch = "infra_vuln_watch.main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

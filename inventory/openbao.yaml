@@ -1,0 +1,7 @@
+# One file per tool. See docs/reference/inventory-format.md for every field.
+name: openbao
+repo: openbao/openbao
+version: "2.5.5"
+owner: iamunnip
+vendor: openbao
+product: openbao

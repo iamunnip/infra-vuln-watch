@@ -1,0 +1,89 @@
+from infra_vuln_watch.version_check import AFFECTED, NOT_AFFECTED, UNKNOWN, check_version
+
+
+def affected_cve(versions):
+    """Build a CVE like the ones NVD has not analysed yet."""
+    return {"affected": [{"affectedData": [{"vendor": "openbao", "product": "openbao", "versions": versions}]}]}
+
+
+def cpe_cve(**fields):
+    """Build a CVE like the ones NVD has analysed."""
+    match = {"vulnerable": True, "criteria": "cpe:2.3:a:openbao:openbao:*:*:*:*:*:*:*:*", **fields}
+    return {"configurations": [{"nodes": [{"cpeMatch": [match]}]}]}
+
+
+def status(cve, version):
+    return check_version(cve, "openbao", "openbao", version)["status"]
+
+
+TWO_BRANCHES = affected_cve([
+    {"version": "2.2.0", "lessThan": "2.6.4", "status": "affected"},
+    {"version": "2.6.4", "status": "unaffected"},
+    {"version": "2.7.0", "lessThan": "2.7.1", "status": "affected"},
+    {"version": "2.7.1", "status": "unaffected"},
+])
+
+
+def test_two_release_branches():
+    assert status(TWO_BRANCHES, "2.1.9") == NOT_AFFECTED
+    assert status(TWO_BRANCHES, "2.2.0") == AFFECTED
+    assert status(TWO_BRANCHES, "2.6.4") == NOT_AFFECTED
+    assert status(TWO_BRANCHES, "2.7.0") == AFFECTED
+    assert status(TWO_BRANCHES, "2.7.1") == NOT_AFFECTED
+
+
+def test_fix_comes_from_the_matching_branch():
+    assert check_version(TWO_BRANCHES, "openbao", "openbao", "2.5.0")["fix"] == "version 2.6.4 or later"
+    assert check_version(TWO_BRANCHES, "openbao", "openbao", "2.7.0")["fix"] == "version 2.7.1 or later"
+
+
+def test_text_ranges():
+    for text in ["< 2.3.2", "<2.3.2", ">= 0.1.0, < 2.3.2"]:
+        cve = affected_cve([{"version": text, "status": "affected"}])
+        assert status(cve, "2.3.1") == AFFECTED
+        assert status(cve, "2.3.2") == NOT_AFFECTED
+
+
+def test_versions_compare_as_numbers_not_text():
+    cve = affected_cve([{"version": "< 2.10.0", "status": "affected"}])
+    assert status(cve, "2.9.0") == AFFECTED
+
+
+def test_cpe_ranges():
+    cve = cpe_cve(versionStartIncluding="1.0.0", versionEndIncluding="1.5.0")
+    assert status(cve, "1.5.0") == AFFECTED
+    assert status(cve, "1.5.1") == NOT_AFFECTED
+    assert status(cve, "0.9.0") == NOT_AFFECTED
+    assert check_version(cve, "openbao", "openbao", "1.5.0")["fix"] == "a version newer than 1.5.0"
+
+
+def test_exact_cpe_version():
+    match = {"vulnerable": True, "criteria": "cpe:2.3:a:openbao:openbao:1.2.3:*:*:*:*:*:*:*"}
+    cve = {"configurations": [{"nodes": [{"cpeMatch": [match]}]}]}
+    assert status(cve, "1.2.3") == AFFECTED
+    assert status(cve, "1.2.4") == NOT_AFFECTED
+
+
+def test_other_products_are_ignored():
+    cve = {"affected": [{"affectedData": [{"vendor": "Red Hat", "product": "Cryostat 4", "defaultStatus": "unaffected"}]}]}
+    assert status(cve, "2.0.0") == NOT_AFFECTED
+    match = {"vulnerable": True, "criteria": "cpe:2.3:a:openbao:aws_plugin:*:*:*:*:*:*:*:*", "versionEndExcluding": "0.1.1"}
+    assert status({"configurations": [{"nodes": [{"cpeMatch": [match]}]}]}, "0.1.0") == NOT_AFFECTED
+
+
+def test_missing_or_unreadable_data_is_unknown():
+    assert status({}, "2.0.0") == UNKNOWN
+    assert status(affected_cve([{"version": "unspecified", "status": "affected"}]), "2.0.0") == UNKNOWN
+    assert status(affected_cve([{"version": "2.x", "status": "affected"}]), "2.0.0") == UNKNOWN
+    assert status(affected_cve(None), "2.0.0") == UNKNOWN
+
+
+def test_placeholder_start_with_an_end_is_a_real_range():
+    for word in ["unspecified", "n/a", "0", "*"]:
+        cve = affected_cve([{"version": word, "lessThan": "2.0", "status": "affected"}])
+        assert status(cve, "1.0") == AFFECTED
+        assert status(cve, "3.0") == NOT_AFFECTED
+
+
+def test_placeholder_alone_is_unknown():
+    assert status(affected_cve([{"version": "0", "status": "affected"}]), "1.0") == UNKNOWN
