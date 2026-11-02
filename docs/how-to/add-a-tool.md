@@ -16,6 +16,7 @@
    name: vault
    repo: hashicorp/vault
    version: "1.15.0"
+   team: sre
    owner: your-github-name
    vendor: hashicorp
    product: vault

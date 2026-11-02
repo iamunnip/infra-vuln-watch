@@ -18,6 +18,16 @@ full details and the fix.
 The inventory uses OpenBao 2.5.5 as a demo. It is kept old on purpose so the tool has real CVEs
 to find, and it is not a real deployment.
 
+Each issue also shows:
+
+- **Risk:** CVSS for severity, EPSS for the chance of an attack, and CISA KEV for known attacks.
+- **A fix date:** based on severity, from 48 hours for critical to 21 days for low. Known exploited
+  CVEs always get 48 hours.
+- **Who is responsible:** the team and owner from the inventory.
+- **Labels:** `severity-*`, `tool-*`, and `known-exploited` or `needs-review` when they apply.
+
+See the [issue format](docs/reference/issue-format.md) for the full details.
+
 ## Why not just ask NVD for my version?
 
 NVD has an exact version lookup, but it depends on analyst data that many recent CVEs do not
@@ -83,6 +93,8 @@ Each standard answers a different question, so each kind of content has one clea
 | Why was it built this way? | ADRs | [Decision list](adr/README.md) |
 | What should I know about the domain? | OKF | [Knowledge bundle](knowledge/index.md) |
 
-## NVD notice
+## Data sources
 
-This product uses data from the NVD API but is not endorsed or certified by the NVD.
+This product uses data from the NVD API but is not endorsed or certified by the NVD. EPSS scores
+come from [FIRST](https://www.first.org/epss/), and known exploited data comes from the
+[CISA KEV catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog).

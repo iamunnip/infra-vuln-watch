@@ -53,5 +53,6 @@ Change the version back when you are done.
 
 ## Next steps
 
+- [Fix your first vulnerability](fix-your-first-vulnerability.md).
 - [Add a tool](../how-to/add-a-tool.md) to the inventory.
 - [Set up the daily scan](../how-to/set-up-the-daily-scan.md) on GitHub.

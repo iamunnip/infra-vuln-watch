@@ -12,6 +12,10 @@ bundle for people and AI agents.
 
 * [Vulnerability data](/vulnerability-data/index.md): how NVD data is shaped and scored.
 
+## Policies
+
+* [Policies](/policies/index.md): rules for how quickly vulnerabilities get fixed.
+
 ## Products
 
 * [Products](/products/index.md): notes on tools we track.
