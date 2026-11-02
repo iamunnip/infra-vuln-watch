@@ -10,6 +10,13 @@ or are deferred. Searching only by product misses them. Searching only by keywor
 whose text never names the product. For OpenBao in November 2026, each search found CVEs the
 other missed, so the tool runs both and merges the results.
 
+## Why there are no date filters
+
+NVD recommends date filters for fetching only what changed, which suits systems that keep their own
+copy of NVD. This tool keeps no copy and asks about one product at a time. A date filter would hide
+older CVEs from a newly added tool or a changed version.
+[ADR 0014](../../adr/0014-keep-full-product-searches.md) has the numbers.
+
 ## Why versions are compared locally
 
 NVD can filter by exact version, but that returned nothing for a new release that was not yet
