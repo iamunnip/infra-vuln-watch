@@ -9,11 +9,14 @@ Twice a day, at 00:00 and 12:00 IST, a GitHub Action checks each tool in `invent
 is affected, it opens an issue in this repo:
 
 ```text
-[low][2.1][cve-2026-115363] - openbao: OpenBao 2.2.0 before 2.6.4 ... contains an information disclosure...
+[LOW] [2.1] [CVE-2026-115363] OpenBao - OpenBao 2.2.0 before 2.6.4 ... contains an information disclosure...
 ```
 
-The parts are `[severity][cvss score][cve id] - name: summary`. The description holds the
+The parts are `[SEVERITY] [CVSS score] [CVE id] Tool - summary`. The description holds the
 full details and the fix.
+
+The inventory uses OpenBao 2.5.5 as a demo. It is kept old on purpose so the tool has real CVEs
+to find, and it is not a real deployment.
 
 ## Why not just ask NVD for my version?
 

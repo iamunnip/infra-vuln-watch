@@ -10,6 +10,7 @@ Each tool has one `.yaml` file in `inventory/`.
 | `owner` | Yes | `iamunnip` | Who looks after this tool, shown in issues |
 | `vendor` | Yes | `openbao` | Vendor name in NVD |
 | `product` | Yes | `openbao` | Product name in NVD |
+| `display_name` | No | `OpenBao` | Name shown in issues. Defaults to `name` |
 | `keyword` | No | `openbao` | Word to search for in NVD. Defaults to `name` |
 
 The scan stops with an error if a required field is missing, if `name` has spaces or is used

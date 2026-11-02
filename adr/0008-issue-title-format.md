@@ -2,7 +2,7 @@
 
 Date: 2026-11-02
 
-Status: Accepted
+Status: Replaced by 0009
 
 ## Context
 

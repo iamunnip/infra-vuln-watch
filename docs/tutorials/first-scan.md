@@ -39,7 +39,7 @@ for each tool. You will see lines like this:
 ```text
 Checking openbao 2.5.5
   Found 16 CVE(s) to report
-  [dry run] [high][7.5][cve-2026-115365] - openbao: OpenBao from 2.3.0 before 2.6.3 contains...
+  [dry run] [HIGH] [7.5] [CVE-2026-115365] OpenBao - OpenBao from 2.3.0 before 2.6.3 contains...
 ```
 
 The count on your screen may differ, because new CVEs are published all the time.
