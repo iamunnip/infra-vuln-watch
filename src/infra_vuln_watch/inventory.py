@@ -35,6 +35,8 @@ def load_item(path):
 
     # The word to search for in NVD. Most tools can just use their name.
     item.setdefault("keyword", item["name"])
+    # The name people read in issues, like "OpenBao" instead of "openbao".
+    item.setdefault("display_name", item["name"])
     return item
 
 

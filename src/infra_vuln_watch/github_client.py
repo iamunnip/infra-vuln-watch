@@ -8,6 +8,7 @@ import requests
 API_URL = "https://api.github.com"
 MAIN_LABEL = "vuln-watch"
 REVIEW_LABEL = "needs-review"
+TOOL_LABEL_COLOR = "1d76db"
 SEVERITY_LABELS = {
     "critical": "b60205",
     "high": "d93f0b",
@@ -23,6 +24,10 @@ WAIT_AFTER_CREATE_SECONDS = 3
 
 def severity_label(severity):
     return f"severity-{severity}"
+
+
+def tool_label(name):
+    return f"tool-{name}"
 
 
 class GitHubClient:
@@ -51,13 +56,15 @@ class GitHubClient:
                 return results
             page += 1
 
-    def create_missing_labels(self):
-        """Create our labels the first time the tool runs."""
+    def create_missing_labels(self, tool_names):
+        """Create any of our labels that do not exist yet."""
         existing = {label["name"] for label in self.get_all_pages("labels", {})}
 
         wanted = {MAIN_LABEL: "5319e7", REVIEW_LABEL: "e99695"}
         for severity, color in SEVERITY_LABELS.items():
             wanted[severity_label(severity)] = color
+        for name in tool_names:
+            wanted[tool_label(name)] = TOOL_LABEL_COLOR
 
         for name, color in wanted.items():
             if name not in existing:

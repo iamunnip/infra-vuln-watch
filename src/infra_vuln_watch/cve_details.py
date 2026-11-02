@@ -5,9 +5,17 @@ CVSS_KEYS = ["cvssMetricV40", "cvssMetricV31", "cvssMetricV30", "cvssMetricV2"]
 
 MAX_SUMMARY_LENGTH = 120
 
+# The parts of a CVSS score that are easy for a person to read.
+ATTACK_FIELDS = {
+    "attackVector": "Attack from",
+    "attackComplexity": "Attack complexity",
+    "privilegesRequired": "Privileges needed",
+    "userInteraction": "User interaction",
+}
+
 
 def get_score(cve):
-    """Return the severity, score, CVSS version and vector of a CVE."""
+    """Return the severity, score, CVSS version, vector and attack details of a CVE."""
     metrics = cve.get("metrics", {})
 
     for key in CVSS_KEYS:
@@ -25,9 +33,14 @@ def get_score(cve):
             "score": str(data["baseScore"]),
             "cvss_version": data.get("version", "unknown"),
             "vector": data.get("vectorString", "unknown"),
+            "attack": {
+                label: data[field].replace("_", " ").capitalize()
+                for field, label in ATTACK_FIELDS.items()
+                if field in data
+            },
         }
 
-    return {"severity": "unknown", "score": "n/a", "cvss_version": "n/a", "vector": "n/a"}
+    return {"severity": "unknown", "score": "n/a", "cvss_version": "n/a", "vector": "n/a", "attack": {}}
 
 
 def get_description(cve):

@@ -13,4 +13,5 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0005](0005-organise-docs-with-diataxis-okf-arc42-and-adr.md) | Organise docs with Diataxis, OKF, arc42 and ADRs | Accepted |
 | [0006](0006-use-the-python-src-layout.md) | Use the Python src layout | Accepted |
 | [0007](0007-scan-twice-a-day.md) | Scan twice a day | Accepted |
-| [0008](0008-issue-title-format.md) | Issue title format | Accepted |
+| [0008](0008-issue-title-format.md) | Issue title format | Replaced by 0009 |
+| [0009](0009-issue-title-and-labels.md) | Issue title and labels | Accepted |

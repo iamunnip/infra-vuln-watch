@@ -46,10 +46,11 @@ def test_only_missing_labels_are_created(monkeypatch, client):
     fake_post = Mock(return_value=reply({}))
     monkeypatch.setattr(github_client.requests, "post", fake_post)
 
-    client.create_missing_labels()
+    client.create_missing_labels(["openbao"])
     created = [call.kwargs["json"]["name"] for call in fake_post.call_args_list]
     assert "needs-review" in created
     assert "severity-low" in created
+    assert "tool-openbao" in created
     assert "vuln-watch" not in created
     assert "severity-high" not in created
 

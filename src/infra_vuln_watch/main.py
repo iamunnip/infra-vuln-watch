@@ -40,7 +40,11 @@ def report(item, cve, result, github, reported_ids):
         return
 
     severity = cve_details.get_score(cve)["severity"]
-    labels = [github_client.MAIN_LABEL, github_client.severity_label(severity)]
+    labels = [
+        github_client.MAIN_LABEL,
+        github_client.severity_label(severity),
+        github_client.tool_label(item["name"]),
+    ]
     if result["status"] == UNKNOWN:
         labels.append(github_client.REVIEW_LABEL)
 
@@ -72,7 +76,7 @@ def main():
             return 1
         github = github_client.GitHubClient(token, repository)
         try:
-            github.create_missing_labels()
+            github.create_missing_labels([item["name"] for item in items])
             reported_ids = github.get_reported_ids()
         except requests.RequestException as error:
             print(f"Could not read from GitHub: {error}")
