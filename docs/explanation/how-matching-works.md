@@ -10,6 +10,13 @@ or are deferred. Searching only by product misses them. Searching only by keywor
 whose text never names the product. For OpenBao in November 2026, each search found CVEs the
 other missed, so the tool runs both and merges the results.
 
+## Why there are no date filters
+
+NVD recommends date filters for fetching only what changed, which suits systems that keep their own
+copy of NVD. This tool keeps no copy and asks about one product at a time. A date filter would hide
+older CVEs from a newly added tool or a changed version.
+[ADR 0014](../../adr/0014-keep-full-product-searches.md) has the numbers.
+
 ## Why versions are compared locally
 
 NVD can filter by exact version, but that returned nothing for a new release that was not yet
@@ -59,6 +66,12 @@ issue still opens, because knowing about a CVE matters more than having every de
 Each severity has a fix window. The clock starts when the issue opens and not when the CVE was
 published, because some CVEs are published long before they are found here. Counting from
 publication would make them overdue before anyone had seen them.
+
+## Why only one scan runs at a time
+
+Each scan reads the list of reported CVEs once, when it starts. Two scans running together would not
+see each other's new issues, so both could open the same one. The workflow makes the second scan
+wait, so it reads the list after the first has finished.
 
 ## Limits
 

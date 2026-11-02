@@ -47,7 +47,7 @@ The count on your screen may differ, because new CVEs are published all the time
 ## 5. See the result change
 
 Edit the file so it says `version: "2.7.2"` and run the scan again. A newer version has fewer
-matching CVEs. This is the same check that runs twice a day.
+matching CVEs. This is the same check that runs on GitHub.
 
 Change the version back when you are done.
 
@@ -55,4 +55,4 @@ Change the version back when you are done.
 
 - [Fix your first vulnerability](fix-your-first-vulnerability.md).
 - [Add a tool](../how-to/add-a-tool.md) to the inventory.
-- [Set up the daily scan](../how-to/set-up-the-daily-scan.md) on GitHub.
+- [Run the scan on GitHub](../how-to/run-the-scan-on-github.md).

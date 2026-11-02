@@ -40,7 +40,7 @@ a tool.
 
 ## 4. Solution strategy
 
-- Use scheduled runs with no stored state. GitHub Issues remember what was reported
+- Run the scan by hand, with no stored state ([ADR 0016](../adr/0016-run-the-scan-by-hand.md)). GitHub Issues remember what was reported
   ([ADR 0004](../adr/0004-use-github-issues-as-state.md)).
 - Search NVD twice and compare versions locally
   ([ADR 0002](../adr/0002-search-nvd-twice-and-compare-versions-locally.md)).
@@ -85,7 +85,7 @@ sequenceDiagram
     participant N as NVD
     participant R as EPSS and CISA KEV
     participant G as GitHub Issues
-    A->>M: start at 18:30 and 06:30 UTC
+    A->>M: start when someone runs the workflow
     M->>G: create missing labels, list reported CVEs
     loop each inventory item
         M->>N: product search and keyword search
@@ -137,15 +137,16 @@ stateDiagram-v2
 
 `.github/workflows/tests.yml` runs the tests on each push and pull request.
 
-`.github/workflows/daily-scan.yml` runs the scan on a GitHub hosted runner. The cron is
-`30 6,18 * * *`, which is 00:00 and 12:00 IST. See [ADR 0007](../adr/0007-scan-twice-a-day.md). Settings are `GITHUB_TOKEN`, provided by Actions, and
+`.github/workflows/scan.yml` runs the scan on a GitHub hosted runner when someone starts it, one
+scan at a time.
+Settings are `GITHUB_TOKEN`, provided by Actions, and
 `NVD_API_KEY`, an optional secret.
 
 ## 8. Crosscutting concepts
 
 - **Untrusted input:** CVE text can be written by anyone. It is cleaned before it reaches an
   issue, so it cannot mention users or fake the marker.
-- **Duplicate protection:** each issue holds a hidden `vuln-watch-id`. Only issues with the
+- **Duplicate protection:** only one scan runs at a time, and each issue holds a hidden `vuln-watch-id`. Only issues with the
   `vuln-watch` label are trusted, because strangers cannot add labels in a public repo.
 - **Least privilege:** the workflow token can only read code and write issues. Actions are
   pinned to commit SHAs.
@@ -163,6 +164,7 @@ See the [ADR list](../adr/README.md).
 | --- | --- |
 | NVD is down during a run | Retries, then the run fails and shows red |
 | The scan runs twice in a day | No duplicate issues |
+| A scan is started while another is running | It waits, then opens no duplicate issues |
 | An owner closes an issue | It is not reopened |
 | An upgrade is merged | The next scan stops reporting the fixed CVEs |
 | A CVE has no version data | An issue with `needs-review` is opened |
@@ -177,8 +179,9 @@ See the [ADR list](../adr/README.md).
 | NVD data arrives late or incomplete | Late alerts | Keyword search and unknown results reduce this. A second source can be added later |
 | Inventory version goes stale | Wrong results | The fix process updates it with each upgrade. Automatic detection is not built |
 | A fix date passes unnoticed | Late fixes | Accepted for now. An `overdue` label could be added later |
-| GitHub disables idle schedules after 60 days | Scans silently stop | GitHub sends an email warning, and the owner re-enables the workflow |
+| Nobody runs the scan | New CVEs go unnoticed | Accepted, because the scan runs by hand. The schedule can come back ([ADR 0016](../adr/0016-run-the-scan-by-hand.md)) |
 | A CVE joins the KEV list after its issue opened | Urgency is missed | Accepted for now. The issue says its risk results can change |
+| Requests grow with the inventory, at 2 per tool per scan | Slow scans or rate limiting past about 100 tools | Add an API key first, then revisit [ADR 0014](../adr/0014-keep-full-product-searches.md) |
 | Wrong vendor or product name in the inventory | Missed CVEs | The how-to guide shows how to look up names |
 | A scored issue is not updated if NVD changes the score | Stale title | Accepted for simplicity. The NVD link shows the current score |
 
