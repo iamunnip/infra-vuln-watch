@@ -17,4 +17,10 @@ Caches are best effort and may be evicted. Custom receipt paths require correspo
 cache changes. External tickets persist in their respective services.
 Workflow concurrency serialises Actions scans; it does not lock independent local executions.
 
+The Slack receipt cache restore and save steps are both pinned to `actions/cache` v6.1.0's
+commit. They use the Node 24 action runtime on the hosted Ubuntu runner. Self-hosted runners
+would need version 2.327.1 or newer, per the
+[upstream runtime requirements](https://github.com/actions/cache/tree/55cc8345863c7cc4c66a329aec7e433d2d1c52a9#whats-new).
+Dependabot groups the cache action family for version updates and, separately, security updates.
+
 [Architecture index](README.md)
