@@ -1,10 +1,75 @@
-# One file per tool. See docs/reference/inventory-format.md for every field.
-# This is a demo version, kept old on purpose to show the tool finding real CVEs.
+# Demonstration inventory, not a record of real production or staging systems.
+# Versions are illustrative, not recommendations of secure OpenBao releases.
+# See docs/diataxis/reference/inventory-format.md.
 name: openbao
 display_name: OpenBao
 repo: openbao/openbao
-version: "2.5.5"
 team: sre
 owner: iamunnip
 vendor: openbao
 product: openbao
+
+# Complete tool configuration, matching the settings in config.yaml.
+# These explicit values override global settings. Remove a value to inherit it.
+# Credentials remain in environment variables, never in this file.
+config:
+  fix_days:
+    critical: 2
+    high: 7
+    medium: 14
+    low: 21
+    unknown: null
+    known_exploited: 2
+  scan:
+    enabled: true
+    dry_run: false
+    min_severity: low
+    include_unknown_severity: true
+    report_unknown_versions: true
+    ignore_cves: []
+  sources:
+    nvd:
+      product_search: true
+      keyword_search: true
+    epss:
+      enabled: true
+    kev:
+      enabled: true
+      nvd_fallback: true
+  outputs:
+    github:
+      enabled: true
+      repository: null
+      token_env: GITHUB_TOKEN
+    jira:
+      enabled: false
+      base_url: ''
+      project: ''
+      issue_type: Task
+      email_env: JIRA_EMAIL
+      token_env: JIRA_API_TOKEN
+      fields: {}
+  notifications:
+    slack:
+      enabled: false
+      webhook_env: SLACK_WEBHOOK_URL
+      repeat: false
+      state_file: .vuln-watch/slack.json
+
+# Deployment-scoped findings use new identities; legacy tickets are not migrated.
+# Each stable deployment id has its own installed version and reporting history.
+# Team and owner below can differ; omitted values inherit the tool defaults above.
+# Each deployment's config can override any tool or global configuration setting.
+deployments:
+  - id: production
+    environment: production
+    version: "2.5.5"
+    team: sre
+    owner: iamunnip
+    config: {}
+  - id: staging
+    environment: staging
+    version: "2.6.4"
+    team: sre
+    owner: iamunnip
+    config: {}

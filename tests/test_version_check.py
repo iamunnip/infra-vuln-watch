@@ -1,4 +1,4 @@
-from infra_vuln_watch.version_check import AFFECTED, NOT_AFFECTED, UNKNOWN, check_version
+from infra_vuln_watch.domain.version_check import AFFECTED, NOT_AFFECTED, UNKNOWN, check_version
 
 
 def affected_cve(versions):
@@ -100,3 +100,18 @@ def test_all_affected_versions_are_listed_lowest_first():
 def test_the_same_range_from_two_sources_is_listed_once():
     cve = {**cpe_cve(versionEndExcluding="2.0.0"), **affected_cve([{"version": "< 2.0.0", "status": "affected"}])}
     assert [v["text"] for v in check_version(cve, "openbao", "openbao", "1.0.0")["affected_versions"]] == ["< 2.0.0"]
+
+
+def test_unbounded_matching_range_prevents_false_fix_guidance():
+    cve = affected_cve([
+        {'version': '< 2.0', 'status': 'affected'},
+        {'version': '1.0', 'lessThan': '*', 'status': 'affected'},
+    ])
+    result = check_version(cve, 'openbao', 'openbao', '1.5')
+    assert result['status'] == AFFECTED
+    assert result['fix'] is None
+
+
+def test_malformed_cpe_is_unknown_instead_of_crashing():
+    cve = {'configurations': [{'nodes': [{'cpeMatch': [{'vulnerable': True, 'criteria': 'bad'}]}]}]}
+    assert status(cve, '1.0') == UNKNOWN

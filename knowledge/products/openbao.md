@@ -14,6 +14,11 @@ sources:
 
 Vendor `openbao`, product `openbao`. Tracked in [inventory/openbao.yaml](../../inventory/openbao.yaml).
 
+The inventory's optional `config` mapping controls how this scanner handles OpenBao findings;
+it does not configure the running OpenBao service. The demo file includes the full tool configuration and multiple deployment records. Each
+records its own version, environment, team and owner. Empty deployment overrides inherit tool
+settings; empty tool overrides inherit global settings. See the [inventory reference](../../docs/diataxis/reference/inventory-format.md).
+
 # Matching notes
 
 - OpenBao is a fork of HashiCorp Vault. Some CVEs carry an OpenBao CPE while their text only

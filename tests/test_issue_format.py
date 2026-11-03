@@ -2,8 +2,8 @@ from datetime import date
 
 import pytest
 
-from infra_vuln_watch import cve_details
-from infra_vuln_watch import issue_format
+from infra_vuln_watch.domain import cve_details
+from infra_vuln_watch.reporting import issue_format
 
 ITEM = {"name": "openbao", "display_name": "OpenBao", "repo": "openbao/openbao", "version": "2.5.0", "team": "sre", "owner": "iamunnip"}
 CVE = {
@@ -207,3 +207,27 @@ def test_known_exploited_low_score_gets_the_critical_deadline():
     risk = {"epss": {}, "kev": {"CVE-2026-1234": KEV_ENTRY}}
     body = issue_format.make_body(ITEM, CVE, RESULT, risk, opened_on=date(2026, 11, 2))
     assert "> **Fix by:** 2026-11-04 (2 days after this issue was opened)" in body
+
+
+def test_disabled_risk_sources_are_distinguished_from_outages():
+    assert issue_format.describe_epss({'id': 'CVE-X'}, None, enabled=False) == 'Disabled'
+    assert issue_format.describe_kev(None, None, enabled=False) == 'Catalog disabled'
+
+
+def test_deployment_finding_shows_scope_ownership_and_stable_marker():
+    from infra_vuln_watch.domain.identity import inventory_id
+    item = {'name': 'openbao', 'display_name': 'OpenBao', 'repo': 'openbao/openbao',
+            'version': '2.5.5', 'team': 'platform', 'owner': 'production-owner',
+            'deployment_id': 'prod-eu', 'environment': 'production'}
+    cve = {'id': 'CVE-2026-1234'}
+    result = {'status': 'affected', 'fix': None, 'affected_versions': []}
+    assert inventory_id(item) == 'openbao/prod-eu'
+    assert 'OpenBao [production/prod-eu]' in issue_format.make_title(item, cve)
+    body = issue_format.make_body(item, cve, result)
+    assert '| Deployment | prod-eu |' in body
+    assert '| Environment | production |' in body
+    assert 'production-owner' in body
+    assert 'Update `version` for deployment `prod-eu`' in body
+    assert '<!-- vuln-watch-id: openbao/prod-eu/CVE-2026-1234 -->' in body
+    changed_version = {**item, 'version': '2.6.4'}
+    assert issue_format.issue_marker(changed_version, cve) == issue_format.issue_marker(item, cve)

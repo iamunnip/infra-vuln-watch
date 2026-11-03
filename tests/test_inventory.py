@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from infra_vuln_watch.inventory import load_inventory, load_item
+from infra_vuln_watch.configuration.inventory import load_inventory, load_item
 
 GOOD = 'name: a\nrepo: o/a\nversion: "1.2.3"\nteam: sre\nowner: me\nvendor: o\nproduct: a\n'
 
@@ -53,3 +53,96 @@ def test_duplicate_names_are_rejected(tmp_path):
 def test_team_is_required(tmp_path):
     with pytest.raises(ValueError, match="team"):
         load_item(write(tmp_path, GOOD.replace("team: sre\n", "")))
+
+
+@pytest.mark.parametrize('replacement', ['42', 'true', '[]', '" "'])
+def test_non_string_or_blank_name_is_a_clean_error(tmp_path, replacement):
+    with pytest.raises(ValueError, match='non-empty string'):
+        load_item(write(tmp_path, GOOD.replace('name: a', f'name: {replacement}')))
+
+
+def test_malformed_yaml_is_a_clean_error(tmp_path):
+    with pytest.raises(ValueError, match='could not read inventory'):
+        load_item(write(tmp_path, 'name: [unterminated'))
+
+
+def test_tab_in_name_is_rejected(tmp_path):
+    with pytest.raises(ValueError, match='spaces'):
+        load_item(write(tmp_path, GOOD.replace('name: a', 'name: "a\\tb"')))
+
+
+def test_unreadable_file_is_a_clean_error(tmp_path):
+    with pytest.raises(ValueError, match='could not read inventory'):
+        load_item(tmp_path / 'missing.yaml')
+
+
+MULTI = '''name: openbao
+repo: openbao/openbao
+vendor: openbao
+product: openbao
+team: sre
+owner: default-owner
+config:
+  fix_days:
+    high: 5
+  outputs:
+    jira:
+      project: SEC
+deployments:
+  - id: prod-eu
+    environment: production
+    version: "2.5.5"
+    owner: prod-owner
+    config:
+      fix_days:
+        high: 3
+  - id: stage
+    environment: staging
+    version: "2.6.4"
+'''
+
+
+def test_expands_deployments_with_versions_ownership_and_partial_config(tmp_path):
+    write(tmp_path, MULTI)
+    prod, staging = load_inventory(tmp_path)
+    assert prod['name'] == staging['name'] == 'openbao'
+    assert (prod['deployment_id'], prod['environment'], prod['version']) == ('prod-eu', 'production', '2.5.5')
+    assert (prod['owner'], staging['owner']) == ('prod-owner', 'default-owner')
+    assert prod['team'] == staging['team'] == 'sre'
+    assert prod['config']['fix_days']['high'] == 3
+    assert staging['config']['fix_days']['high'] == 5
+    assert prod['config']['outputs']['jira']['project'] == 'SEC'
+    # Inventory layers must not inject built-in defaults that would erase global values.
+    assert 'low' not in prod['config']['fix_days']
+    prod['config']['outputs']['jira']['project'] = 'OTHER'
+    assert staging['config']['outputs']['jira']['project'] == 'SEC'
+
+
+def test_missing_tool_owner_can_be_supplied_per_deployment(tmp_path):
+    text = MULTI.replace('owner: default-owner\n', '').replace('    version: "2.6.4"', '    version: "2.6.4"\n    owner: stage-owner')
+    write(tmp_path, text)
+    prod, stage = load_inventory(tmp_path)
+    assert prod['owner'] == 'prod-owner'
+    assert stage['owner'] == 'stage-owner'
+
+
+@pytest.mark.parametrize('text, message', [
+    (MULTI.replace('id: stage', 'id: prod-eu'), 'duplicate deployment id'),
+    (MULTI.replace('id: stage', 'id: "stage bad"'), 'deployment id'),
+    (MULTI.replace('environment: staging', 'environment: 12'), 'non-empty string'),
+    (MULTI.replace('version: "2.6.4"', 'version: 2.10'), 'quotes'),
+    (MULTI.replace('    version: "2.6.4"\n', ''), 'version'),
+    (MULTI.replace('deployments:\n', 'version: "1.0"\ndeployments:\n'), 'inside each deployment'),
+    (MULTI.replace('    environment: staging', '    typo: staging'), 'unknown deployment fields'),
+    (MULTI[:MULTI.index('deployments:')] + 'deployments: []\n', 'non-empty list'),
+    (MULTI[:MULTI.index('deployments:')] + 'deployments: null\n', 'non-empty list'),
+    (MULTI[:MULTI.index('deployments:')] + 'deployments:\n  - invalid\n', 'mapping'),
+])
+def test_invalid_deployment_is_a_clean_validation_error(tmp_path, text, message):
+    with pytest.raises(ValueError, match=message):
+        load_item(write(tmp_path, text))
+
+
+def test_environment_defaults_to_stable_deployment_id(tmp_path):
+    write(tmp_path, MULTI.replace('    environment: production\n', ''))
+    assert load_inventory(tmp_path)[0]['environment'] == 'prod-eu'

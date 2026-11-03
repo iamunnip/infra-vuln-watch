@@ -1,0 +1,50 @@
+# Global configuration. Any supported setting can be overridden in an inventory
+# tool's config mapping. Credentials are referenced by environment variable name.
+# See docs/diataxis/reference/configuration.md for the complete schema.
+fix_days:
+  critical: 2
+  high: 7
+  medium: 14
+  low: 21
+  unknown: null
+  known_exploited: 2
+
+scan:
+  enabled: true
+  dry_run: false
+  min_severity: low
+  include_unknown_severity: true
+  report_unknown_versions: true
+  ignore_cves: []
+
+sources:
+  nvd:
+    product_search: true
+    keyword_search: true
+  epss:
+    enabled: true
+  kev:
+    enabled: true
+    nvd_fallback: true
+
+outputs:
+  github:
+    enabled: true
+    # null uses GITHUB_REPOSITORY; set owner/repo to route elsewhere.
+    repository: null
+    token_env: GITHUB_TOKEN
+  jira:
+    enabled: false
+    base_url: ""
+    project: ""
+    issue_type: Task
+    email_env: JIRA_EMAIL
+    token_env: JIRA_API_TOKEN
+    fields: {}
+
+notifications:
+  slack:
+    enabled: false
+    webhook_env: SLACK_WEBHOOK_URL
+    repeat: false
+    state_file: .vuln-watch/slack.json

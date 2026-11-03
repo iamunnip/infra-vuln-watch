@@ -1,0 +1,106 @@
+# Inventory format
+
+Each product has one `.yaml` file in `inventory/`. Use a single `version` for a simple record,
+or `deployments` for different versions, environments, clusters or owners.
+
+## Product fields
+
+| Field | Required | Example | Meaning |
+| --- | --- | --- | --- |
+| `name` | Yes | `openbao` | Stable product name; unique across files; no whitespace |
+| `repo` | Yes | `openbao/openbao` | Upstream GitHub repository used for the releases link |
+| `vendor` | Yes | `openbao` | NVD vendor name |
+| `product` | Yes | `openbao` | NVD product name |
+| `display_name` | No | `OpenBao` | Human-readable product name; defaults to `name` |
+| `keyword` | No | `openbao` | NVD keyword search; defaults to `name` |
+| `team` | See below | `sre` | Default responsible team; can be overridden per deployment |
+| `owner` | See below | `iamunnip` | Default responsible owner; can be overridden per deployment |
+| `version` | Single-version records | `"2.5.5"` | Installed version; mutually exclusive with `deployments` |
+| `deployments` | Multi-deployment records | See example | Non-empty list of independently scanned installations |
+| `config` | No | `fix_days: {high: 3}` | Any supported global setting, overridden for this product |
+
+Every resolved installation must have a quoted valid version and non-empty string `team`
+and `owner`. Product-level ownership is optional when every deployment supplies it.
+Other string fields must also be non-empty. Malformed YAML and invalid settings fail before
+network requests. Duplicate product names across files are rejected.
+
+## Multiple versions and environments
+
+```yaml
+name: openbao
+display_name: OpenBao
+repo: openbao/openbao
+vendor: openbao
+product: openbao
+team: sre
+owner: default-owner
+config:
+  fix_days:
+    critical: 2
+    high: 7
+    medium: 14
+    low: 21
+    unknown: null
+    known_exploited: 2
+deployments:
+  - id: prod-eu
+    environment: production
+    version: "2.5.5"
+    team: platform
+    owner: production-owner
+    config:
+      fix_days:
+        high: 3
+  - id: stage
+    environment: staging
+    version: "2.6.4"
+    owner: staging-owner
+    config:
+      notifications:
+        slack:
+          enabled: false
+```
+
+These are illustrative versions, not secure-version recommendations. `prod-eu` and `stage`
+are scanned independently. Staging inherits `team: sre`; production overrides team and owner.
+Each deployment can override any configuration setting, including destinations and credentials'
+environment variable names.
+
+| Deployment field | Required | Meaning |
+| --- | --- | --- |
+| `id` | Yes | Stable unique ID within the product; letters, numbers, hyphens or underscores; starts with a letter or number |
+| `environment` | No | Human-readable environment; defaults to `id` |
+| `version` | Yes | Quoted installed version for this deployment |
+| `team` | Unless inherited | Responsible team for this deployment |
+| `owner` | Unless inherited | Responsible owner for this deployment |
+| `config` | No | Partial settings overriding tool and global settings |
+
+Several installations in the same environment can use different IDs, for example `prod-eu`
+and `prod-us`, both with `environment: production`. Keep the ID stable when upgrading or
+changing ownership; the version and owner are not part of finding identity. Deployment entries
+reject unknown fields and duplicate IDs. Product metadata stays at the top level.
+
+## Complete OpenBao configuration
+
+The [OpenBao inventory](../../../inventory/openbao.yaml) contains the complete settings currently
+listed in root `config.yaml`, including every fix deadline, scanning, sources, GitHub, Jira and
+Slack. It also includes two explicitly labelled demo deployments, not real deployed systems.
+
+Explicit tool values override global values. Consequently, changing a global value will not
+change OpenBao's matching explicit value. Remove the tool value to inherit it, or use `config: {}`
+to inherit every global setting. Deployment overrides take precedence over tool values.
+Nested mappings merge and lists replace inherited lists. Credentials stay in environment
+variables; YAML holds variable names only. See [configuration](configuration.md).
+
+## Single-version compatibility and reporting identity
+
+Existing files with top-level `version`, `team` and `owner` remain supported. They retain the
+legacy finding marker `tool/CVE`. A deployment record uses `tool/deployment-id/CVE` in every
+tracker and Slack receipt. The same CVE can therefore create separate findings for production
+and staging. Titles show the environment and deployment, bodies include ownership and version,
+and tickets get a `deployment-ID` label in addition to the product label.
+
+Converting a legacy record to `deployments` creates new identities. Existing unscoped tickets
+and notification receipts are **not automatically migrated** because they do not identify an
+environment. Review and reconcile old tickets manually; the scanner never closes them.
+Renaming a deployment ID also creates a new reporting identity.
