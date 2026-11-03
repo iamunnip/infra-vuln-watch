@@ -12,7 +12,7 @@ flowchart LR
     jira["Jira Cloud — External software system"]
     slack["Slack — External software system"]
     subgraph system["infra-vuln-watch — System boundary"]
-        scanner["Scanner — Application container<br/>Python 3.13 CLI<br/>Matches versions and reports new findings"]
+        scanner["Scanner — Application container<br/>Python 3.13 CLI<br/>Matches versions, reports new findings and updates open tickets"]
         inventory[("Inventory — File store<br/>Versioned YAML files<br/>Product and deployment identities, versions, ownership and overrides")]
         config[("Global policy — File store<br/>config.yaml or selected YAML path")]
         receipts[("Slack receipts — Optional file store<br/>Atomic JSON delivery records")]
@@ -25,8 +25,8 @@ flowchart LR
     scanner -->|Searches product and keyword via HTTPS JSON| nvd
     scanner -->|Requests new finding scores via HTTPS JSON| epss
     scanner -->|Downloads catalog once per run via HTTPS JSON| kev
-    scanner -->|Optionally reads markers and writes labels and issues via HTTPS REST| github
-    scanner -->|Optionally reads markers and writes tickets via HTTPS REST v3| jira
+    scanner -->|Optionally reads markers and writes labels, issues, comments and titles via HTTPS REST| github
+    scanner -->|Optionally reads markers and writes tickets, comments and labels via HTTPS REST v3| jira
     scanner -->|Optionally posts plain-text webhook payloads via HTTPS JSON| slack
 ```
 

@@ -1,6 +1,7 @@
 # Directory Update Log
 
 ## 2026-11-03
+* **Update**: Noted that scans flag open issues but people still close them in the [fix process](/policies/vulnerability-fix-process.md).
 * **Update**: Added ticket-held delivery records and update notifications to [finding delivery](/policies/finding-delivery.md).
 * **Update**: Added ticket updates, temporary exceptions, backing off and Jira formatting to [finding delivery](/policies/finding-delivery.md).
 * **Update**: Noted that missed deadlines are shown on tickets in [fix windows](/policies/fix-windows.md).

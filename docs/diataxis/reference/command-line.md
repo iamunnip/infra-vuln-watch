@@ -6,9 +6,9 @@ python -m infra_vuln_watch [--dry-run] [--inventory DIRECTORY] [--config PATH]
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--dry-run` | Off | Print findings and open no issues. Needs no GitHub token |
+| `--dry-run` | Off | Print findings, and open, update and notify nothing. Needs no output credentials |
 | `--config` | `config.yaml` if present, otherwise built-in defaults | Global policy file; an explicitly selected file must exist |
-| `--inventory` | `inventory`, in the folder you run from | Directory of YAML files |
+| `--inventory` | `inventory`, in the folder you run from | Directory of `.yaml` and `.yml` files |
 
 ## Environment variables
 
@@ -26,7 +26,7 @@ python -m infra_vuln_watch [--dry-run] [--inventory DIRECTORY] [--config PATH]
 | Code | Meaning |
 | --- | --- |
 | `0` | Every tool was checked. Finding CVEs still counts as success |
-| `1` | Configuration, source retrieval, output setup or delivery failed |
+| `1` | Configuration, source retrieval, output setup, delivery or a ticket update failed, a destination rate limited the scan, or a CVE record was malformed |
 
 
 

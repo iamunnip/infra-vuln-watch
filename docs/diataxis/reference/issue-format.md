@@ -73,7 +73,8 @@ Severity comes from the CVSS score, using the same scale for every CVSS version.
 
 Days count from the day the issue is opened. By default a CVE on the CISA KEV list gets 2 days, whatever
 its score. Otherwise, a CVE with no score has no deadline.
-The date is written once, and nothing tracks or enforces it after that. To change the days, use the global or per-tool
+The date is written once and is not enforced or moved later. Each scan adds the `overdue` label to an open
+issue once its date has passed. To change the days, use the global or per-tool
 [configuration](configuration.md). The table above shows the built-in defaults.
 
 ## Risk summary
@@ -87,7 +88,9 @@ The date is written once, and nothing tracks or enforces it after that. To chang
 `Could not check` means the source was down when the issue was written. It does not mean the CVE
 is safe. A CVE on the KEV list always gets the red `CAUTION` box and the `known-exploited` label.
 
-These results are written once and not updated later.
+The risk table is written once. A later scan flags a CVE that joins the KEV list, or a changed score, with a
+comment and labels, as described under [keeping tickets current](#keeping-tickets-current). EPSS results and
+`Could not check` are not updated.
 
 The box colour follows the severity: `CAUTION` for critical and high, `WARNING` for medium, `NOTE`
 for low, and `IMPORTANT` when there is no severity. A second warning box appears when the result

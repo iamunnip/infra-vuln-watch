@@ -62,6 +62,7 @@ outputs:
     api_url: https://api.github.com
     timeout: 30
     create_wait: 3
+    max_rate_limit_wait: 120
   jira:
     enabled: false
     base_url: ''
@@ -71,6 +72,7 @@ outputs:
     token_env: JIRA_API_TOKEN
     timeout: 30
     create_wait: 1
+    max_rate_limit_wait: 120
     fields: {}
 notifications:
   slack:
@@ -81,6 +83,7 @@ notifications:
     notify_updates: true
     state_file: .vuln-watch/slack.json
     send_wait: 1
+    max_rate_limit_wait: 120
 ```
 
 These are also the built-in defaults. `{}` is a valid empty configuration; an empty file or
@@ -199,8 +202,8 @@ CLI options.
 
 Each ticket destination reads its own finding history, including closed tickets. Legacy records
 use `tool/CVE`; deployments use `tool/deployment-id/CVE`. Environments are tracked independently.
-A finding reported to GitHub can still create a missing Jira ticket, and vice versa. Existing
-tickets are not refreshed, closed or reopened. Output setup fails before scanning if a selected
+A finding reported to GitHub can still create a missing Jira ticket, and vice versa. Open tickets
+are updated when their facts change, and tickets are never closed or reopened. Output setup fails before scanning if a selected
 tracker's history cannot be read. During reporting, a failed destination does not prevent
 attempts to the others or later findings, but makes the run exit with code 1.
 
@@ -238,7 +241,7 @@ python -m infra_vuln_watch --config ./config.yaml --inventory ./inventory --dry-
 ```
 
 Paths resolve from the current working directory, not from the configuration file's directory.
-A configuration file should live outside the inventory directory, whose `.yaml` files are all
+A configuration file should live outside the inventory directory, whose `.yaml` and `.yml` files are all
 interpreted as tool records. See [inventory format](inventory-format.md) and
 [command line](command-line.md).
 

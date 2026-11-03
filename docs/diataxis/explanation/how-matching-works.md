@@ -94,10 +94,12 @@ wait, so it reads the list after the first has finished.
 
 - The tool knows versions, not how you use the tool. An affected version may not be exploitable
   in your setup.
-- A CVE that NVD has not published, or that names a different vendor or product than your
-  inventory file, will not be matched.
+- A CVE that NVD has not published will not be matched. Nor will one that names a different vendor
+  or product than your inventory file and aliases, unless its description names the tool, which
+  opens a review issue instead.
 - It does not check the libraries inside a tool.
-- An issue does not change after it opens, so a CVE added to the KEV list later is not flagged.
+- Open issues are only brought up to date when a scan runs, so a CVE added to the KEV list later is
+  flagged at the next scan, not when it is listed.
 
 See also [ADR 0002](../../adr/0002-search-nvd-twice-and-compare-versions-locally.md) and
 [ADR 0003](../../adr/0003-report-unknown-results.md).
