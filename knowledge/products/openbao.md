@@ -30,4 +30,4 @@ settings; empty tool overrides inherit global settings. See the [inventory refer
 - Plugins are separate products such as `openbao-plugins` and `aws_plugin`. They do not count
   as `openbao` and would need their own inventory file.
 - Security fixes land on more than one release branch, for example 2.6.4 and 2.7.1.
-- See [record shapes](/vulnerability-data/nvd-record-shapes.md) for the data formats.
+- See [record shapes](../vulnerability-data/nvd-record-shapes.md) for the data formats.

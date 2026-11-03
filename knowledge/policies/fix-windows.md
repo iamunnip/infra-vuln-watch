@@ -19,7 +19,7 @@ tags: [policy, severity, deadlines]
 - The window starts when the issue opens, not when the CVE was published.
 - Issues show a date and not a time, so critical uses the 48 hour limit.
 - By default a CVE on the CISA KEV list gets a separate 2 day window, whatever its score. See
-  [CVSS, EPSS and KEV](/vulnerability-data/cvss-epss-kev.md).
+  [CVSS, EPSS and KEV](../vulnerability-data/cvss-epss-kev.md).
 - By default, otherwise a CVE with no score has no window, and a score of 0.0 gets no issue.
 
 # Policy overrides

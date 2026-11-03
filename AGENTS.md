@@ -6,7 +6,7 @@ Start with [README.md](README.md), then the [documentation index](docs/README.md
 ## Where information belongs
 
 - `knowledge/`: OKF domain facts for AI agents and people. Preserve YAML frontmatter,
-  `index.md` and `log.md` conventions. Leading `/` links resolve from this bundle's root.
+  `index.md` and `log.md` conventions. Use relative links, because GitHub cannot find leading `/` links.
   Update `knowledge/log.md` when changing domain content.
 - `docs/diataxis/`: user tutorials, how-to guides, reference and explanations.
 - `docs/arc42/`: architecture explanations in 12 numbered sections.
@@ -65,7 +65,8 @@ With the existing virtual environment, use `.venv/bin/python` in place of `pytho
 `.venv/bin/ruff` and `.venv/bin/mypy` for the other tools. The scan installs `requirements.txt`, so
 regenerate it when a runtime dependency changes; see the
 [command-line reference](docs/diataxis/reference/command-line.md#tests).
-The documentation check validates local Markdown links and headings plus repository OKF
-metadata conventions. It does not check remote URLs. `tests/test_mermaid.py` parses every Mermaid
+The documentation check validates local Markdown links as GitHub resolves them, headings, files named in
+plain text, this repository's own GitHub URLs and repository OKF metadata conventions. It does not check
+other remote URLs. `tests/test_mermaid.py` parses every Mermaid
 diagram with the real parser. That needs Node.js and `npm ci --ignore-scripts` in `scripts/mermaid`.
 Without them it skips locally, apart from a semicolon check, and fails in CI.

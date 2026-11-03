@@ -40,3 +40,4 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0032](0032-record-slack-delivery-on-tickets.md) | Record Slack delivery on tickets | Accepted |
 | [0033](0033-notify-slack-about-ticket-updates.md) | Notify Slack about ticket updates | Accepted |
 | [0034](0034-parse-mermaid-diagrams-in-tests.md) | Parse Mermaid diagrams in tests | Accepted |
+| [0035](0035-use-relative-links-in-the-knowledge-bundle.md) | Use relative links in the knowledge bundle | Accepted |

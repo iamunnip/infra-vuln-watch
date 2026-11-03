@@ -1,5 +1,8 @@
 """Check local documentation links, heading anchors and repository OKF conventions.
 
+Links are resolved the way GitHub resolves them when someone reads the file there, because that is
+where people follow them. Files named in plain text and this repository's own GitHub URLs are checked too.
+
 Run from any directory: python scripts/check_docs.py
 This is a repository check, not a complete Markdown parser or OKF specification validator.
 """
@@ -14,6 +17,15 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r'!?\[[^\]\n]*\]\(<?([^\s>)]+)>?(?:\s+"[^"]*")?\)')
 REFERENCE = re.compile(r'^ {0,3}\[[^\]\n]+\]:\s*<?([^\s>]+)>?', re.MULTILINE)
+SKIPPED_FOLDERS = {'.git', '.venv', 'node_modules', '.pytest_cache', 'build', 'dist', '__pycache__'}
+TEXT_SUFFIXES = {'.md', '.py', '.yaml', '.yml', '.toml', '.mjs'}
+FILE_MENTION = re.compile(
+    r'(?<![\w./\-])((?:docs|knowledge|scripts|src|tests|inventory|\.github)/[\w./\-]*\w\.(?:md|py|ya?ml|mjs|json|toml))')
+OWN_GITHUB_URL = re.compile(
+    r'github\.com/iamunnip/infra-vuln-watch/(?:(?:blob|tree)/[^/\s)>"\']+/([^\s)>"\'#?]+)'
+    r'|actions/workflows/([^\s)>"\'#?/]+))')
+# A file that a guide tells the reader to create.
+EXAMPLE_FILES = {'inventory/vault.yaml'}
 
 
 def prose(text, keep_inline=False):
@@ -70,12 +82,38 @@ def metadata(text):
     return data
 
 
+def repository_files(root, suffixes):
+    return sorted(path for path in root.rglob('*') if path.is_file() and path.suffix in suffixes
+                  and not SKIPPED_FOLDERS & set(path.relative_to(root).parts))
+
+
+def check_mentions(root):
+    """Report files named in plain text, and files in this repository's own URLs, that do not exist.
+
+    Tests hold made-up paths, so they are skipped. ADRs are a historical record, so their plain paths are too.
+    """
+    errors = []
+    for path in repository_files(root, TEXT_SUFFIXES):
+        label = path.relative_to(root)
+        if label.parts[0] == 'tests':
+            continue
+        text = path.read_text(encoding='utf-8')
+        if label.parts[:2] != ('docs', 'adr'):
+            for mention in FILE_MENTION.findall(text):
+                if mention not in EXAMPLE_FILES and not (root / mention).exists():
+                    errors.append(f'{label}: names a file that does not exist: {mention}')
+        for blob, workflow in OWN_GITHUB_URL.findall(text):
+            target = blob or f'.github/workflows/{workflow}'
+            if not (root / unquote(target)).exists():
+                errors.append(f'{label}: links to a repository file that does not exist: {target}')
+    return errors
+
+
 def check(root):
     root = root.resolve()
     knowledge = root / 'knowledge'
-    files = sorted(set(root.glob('*.md')) | set((root / 'docs').rglob('*.md'))
-                   | set(knowledge.rglob('*.md')))
-    errors = []
+    files = repository_files(root, {'.md'})
+    errors = check_mentions(root)
     for path in files:
         text = path.read_text(encoding='utf-8')
         label = path.relative_to(root)
@@ -99,8 +137,11 @@ def check(root):
                 continue
             name = unquote(url.path)
             if name.startswith('/'):
-                base = knowledge if path.is_relative_to(knowledge) else root
-                destination = base / name.lstrip('/')
+                # GitHub reads these from the repository root, not from the OKF bundle root.
+                if path.is_relative_to(knowledge):
+                    errors.append(f'{label}: leading / link is not found on GitHub, use a relative path: {target}')
+                    continue
+                destination = root / name.lstrip('/')
             else:
                 destination = path.parent / name if name else path
             destination = destination.resolve()

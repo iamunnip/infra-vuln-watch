@@ -22,9 +22,9 @@ def bundle(tmp_path):
     return tmp_path
 
 
-def test_bundle_root_links_and_duplicate_heading_anchors(bundle):
+def test_bundle_links_and_duplicate_heading_anchors(bundle):
     (bundle / 'knowledge/index.md').write_text(
-        '---\nokf_version: "0.2"\n---\n[Topic](/topic.md#topic)\n'
+        '---\nokf_version: "0.2"\n---\n[Topic](topic.md#topic)\n'
     )
     (bundle / 'docs/page.md').write_text(
         '# A `CLI`\n# A CLI\n[First](#a-cli)\n[Second](#a-cli-1)\n'
@@ -76,3 +76,90 @@ def test_external_links_are_skipped_but_repository_escape_fails(bundle):
     errors = check(bundle)
     assert len(errors) == 1
     assert 'escapes repository' in errors[0]
+
+
+def test_the_repository_itself_passes():
+    assert check(Path(__file__).resolve().parents[1]) == []
+
+
+def test_leading_slash_link_in_the_bundle_is_reported_because_github_cannot_find_it(bundle):
+    (bundle / 'knowledge/index.md').write_text('---\nokf_version: "0.2"\n---\n[Topic](/topic.md)\n')
+    errors = check(bundle)
+    assert len(errors) == 1
+    assert 'not found on GitHub' in errors[0]
+
+
+def test_leading_slash_link_in_the_bundle_is_reported_even_if_the_repo_root_has_that_file(bundle):
+    (bundle / 'topic.md').write_text('# Topic\n')
+    (bundle / 'knowledge/index.md').write_text('---\nokf_version: "0.2"\n---\n[Topic](/topic.md)\n')
+    assert any('not found on GitHub' in error for error in check(bundle))
+
+
+def test_leading_slash_link_outside_the_bundle_resolves_from_the_repository_root(bundle):
+    (bundle / 'docs/page.md').write_text('[Topic](/knowledge/topic.md)\n[Lost](/topic.md)\n')
+    errors = check(bundle)
+    assert len(errors) == 1
+    assert '/topic.md' in errors[0]
+
+
+def test_relative_links_between_bundle_folders_are_followed(bundle):
+    (bundle / 'knowledge/area').mkdir()
+    (bundle / 'knowledge/area/index.md').write_text('[Topic](../topic.md#topic)\n[Wrong](topic.md)\n')
+    errors = check(bundle)
+    assert len(errors) == 1
+    assert 'missing link target: topic.md' in errors[0]
+
+
+@pytest.mark.parametrize('name', ['README.md', 'scripts/mermaid/nested/README.md', 'other/guide.md'])
+def test_markdown_files_anywhere_are_checked(bundle, name):
+    (bundle / name).parent.mkdir(parents=True, exist_ok=True)
+    (bundle / name).write_text('[Lost](lost.md)\n')
+    assert any('lost.md' in error for error in check(bundle))
+
+
+def test_generated_folders_are_not_checked(bundle):
+    (bundle / 'node_modules/package').mkdir(parents=True)
+    (bundle / 'node_modules/package/README.md').write_text('[Lost](lost.md)\n')
+    assert check(bundle) == []
+
+
+@pytest.mark.parametrize('name,text', [
+    ('src/module.py', '# See docs/adr/0001-lost.md for why.\n'),
+    ('config.yaml', '# See docs/diataxis/lost.md\n'),
+    ('docs/page.md', 'Edit `inventory/lost.yaml` first.\n'),
+    ('.github/workflows/run.yml', '# Uses scripts/lost.py\n'),
+])
+def test_files_named_in_plain_text_must_exist(bundle, name, text):
+    (bundle / name).parent.mkdir(parents=True, exist_ok=True)
+    (bundle / name).write_text(text)
+    assert any('names a file that does not exist' in error for error in check(bundle))
+
+
+def test_existing_and_example_files_and_history_can_be_named(bundle):
+    (bundle / 'docs/adr').mkdir()
+    (bundle / 'tests').mkdir()
+    (bundle / 'docs/page.md').write_text('See `knowledge/topic.md` and create `inventory/vault.yaml`.\n')
+    (bundle / 'docs/adr/0001-old.md').write_text('# Old\nThis moved from docs/old/place.md.\n')
+    (bundle / 'tests/test_x.py').write_text("FIXTURE = 'docs/made-up.md'\n")
+    assert check(bundle) == []
+
+
+@pytest.mark.parametrize('url,target', [
+    ('https://github.com/iamunnip/infra-vuln-watch/blob/main/vulnerability-data/index.md', 'vulnerability-data/index.md'),
+    ('https://github.com/iamunnip/infra-vuln-watch/tree/main/lost', 'lost'),
+    ('https://github.com/iamunnip/infra-vuln-watch/actions/workflows/lost.yml/badge.svg', '.github/workflows/lost.yml'),
+])
+def test_own_github_urls_must_point_at_existing_files(bundle, url, target):
+    (bundle / 'docs/page.md').write_text(f'[Link]({url})\n')
+    errors = check(bundle)
+    assert len(errors) == 1
+    assert target in errors[0]
+
+
+def test_own_github_urls_to_existing_files_pass_and_other_repositories_are_skipped(bundle):
+    (bundle / 'docs/page.md').write_text(
+        '[Topic](https://github.com/iamunnip/infra-vuln-watch/blob/main/knowledge/topic.md#topic)\n'
+        '[Other](https://github.com/openbao/openbao/blob/main/lost.md)\n'
+    )
+    assert check(bundle) == []
+
