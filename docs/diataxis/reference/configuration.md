@@ -160,8 +160,8 @@ EPSS and KEV downloads can be disabled independently. KEV's `nvd_fallback` separ
 whether NVD's copied exploitation fields are used. Issues distinguish disabled downloads from
 unavailable sources. KEV catalogs are shared within a run when their source settings match.
 
-Timeouts accept 1–300 seconds; attempts accept integers 1–10; retry waits accept 0–3600 seconds.
-EPSS batch size accepts integers 1–100. HTTP endpoints for NVD, EPSS and KEV remain the official
+Timeouts accept 1 to 300 seconds; attempts accept integers 1 to 10; retry waits accept 0 to 3600 seconds.
+EPSS batch size accepts integers 1 to 100. HTTP endpoints for NVD, EPSS and KEV remain the official
 sources. Only operational options are configurable; raw secrets are not accepted in YAML.
 
 ## Destinations

@@ -4,18 +4,18 @@ Scope: the infra-vuln-watch system. The CLI is an application container and inve
 
 ```mermaid
 flowchart LR
-    maintainer["Maintainer — Person"]
-    github["GitHub — External software system<br/>Actions execution and persistent issue history"]
-    nvd["NVD — External software system"]
-    epss["FIRST EPSS — External software system"]
-    kev["CISA KEV — External software system"]
-    jira["Jira Cloud — External software system"]
-    slack["Slack — External software system"]
-    subgraph system["infra-vuln-watch — System boundary"]
-        scanner["Scanner — Application container<br/>Python 3.13 CLI<br/>Matches versions, reports new findings and updates open tickets"]
-        inventory[("Inventory — File store<br/>Versioned YAML files<br/>Product and deployment identities, versions, ownership and overrides")]
-        config[("Global policy — File store<br/>config.yaml or selected YAML path")]
-        receipts[("Slack receipts — Optional file store<br/>Atomic JSON delivery records")]
+    maintainer["Maintainer: Person"]
+    github["GitHub: External software system<br/>Actions execution and persistent issue history"]
+    nvd["NVD: External software system"]
+    epss["FIRST EPSS: External software system"]
+    kev["CISA KEV: External software system"]
+    jira["Jira Cloud: External software system"]
+    slack["Slack: External software system"]
+    subgraph system["infra-vuln-watch: System boundary"]
+        scanner["Scanner: Application container<br/>Python 3.13 CLI<br/>Matches versions, reports new findings and updates open tickets"]
+        inventory[("Inventory: File store<br/>Versioned YAML files<br/>Product and deployment identities, versions, ownership and overrides")]
+        config[("Global policy: File store<br/>config.yaml or selected YAML path")]
+        receipts[("Slack receipts: Optional file store<br/>Atomic JSON delivery records")]
         scanner -->|Reads and saves notification receipts| receipts
         scanner -->|Reads and validates policy| config
         scanner -->|Reads local YAML using PyYAML| inventory
