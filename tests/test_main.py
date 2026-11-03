@@ -301,7 +301,7 @@ deployments:
     monkeypatch.setattr(nvd_client, 'fetch_cves', lambda item: [make_cve('CVE-NEW', '< 2.0.0')])
     assert main.main() == 0
     github.create_issue.assert_called_once()
-    assert '[PRODUCTION]' in github.create_issue.call_args.args[0]
+    assert '[PROD]' in github.create_issue.call_args.args[0]
 
 
 def test_global_tool_deployment_config_precedence_reaches_delivery(inventory, github, monkeypatch):

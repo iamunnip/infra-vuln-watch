@@ -1,6 +1,7 @@
 # Directory Update Log
 
 ## 2026-11-03
+* **Update**: Documented the production-to-PROD heading alias without identity changes in [finding delivery](/policies/finding-delivery.md).
 * **Update**: Added severity-first and environment-first heading guidance and Slack fallback visibility to [finding delivery](/policies/finding-delivery.md).
 * **Update**: Clarified the upstream GitHub repository versus finding destinations in [OpenBao inventory notes](/products/openbao.md).
 * **Update**: Noted grouped product identifiers in the [OpenBao inventory](/products/openbao.md); matching identifiers and deployment identities are unchanged.

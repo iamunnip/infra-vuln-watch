@@ -131,14 +131,18 @@ def test_deployments_share_product_but_have_independent_routes(clients):
     assert 'tool/staging/CVE-2026-1234' in jira.create_issue.call_args.args[1]
 
 
-def test_shared_title_format_is_used_for_github_jira_and_slack(clients, tmp_path):
+@pytest.mark.parametrize('environment,deployment,expected', [
+    ('stage', 'stage-eu', '[STAGE/stage-eu]'),
+    ('production', 'production', '[PROD]'),
+])
+def test_shared_title_format_is_used_for_github_jira_and_slack(clients, tmp_path, environment, deployment, expected):
     github, jira, slack = clients
     config = both()
     config['notifications'] = {'slack': {'enabled': True, 'state_file': str(tmp_path / 'state.json')}}
-    target = {**item(overrides=config), 'environment': 'stage', 'deployment_id': 'stage-eu'}
+    target = {**item(overrides=config), 'environment': environment, 'deployment_id': deployment}
     output = router.OutputRouter([target])
     assert output.report(target, CVE, RESULT, RISK)
     title = github.create_issue.call_args.args[0]
-    assert title.startswith('[UNKNOWN] [STAGE/stage-eu] [n/a] CVE-2026-1234 tool -')
+    assert title.startswith(f'[UNKNOWN] {expected} [n/a] CVE-2026-1234 tool -')
     assert jira.create_issue.call_args.args[0] == title
     assert slack.send.call_args.args[1] == title

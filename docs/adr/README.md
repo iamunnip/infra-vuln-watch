@@ -29,3 +29,4 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0021](0021-track-deployments-independently.md) | Track deployments independently | Accepted |
 | [0022](0022-group-inventory-product-metadata.md) | Group inventory product metadata | Accepted |
 | [0023](0023-prioritise-environment-in-finding-titles.md) | Prioritise environment in finding titles | Accepted |
+| [0024](0024-abbreviate-production-in-titles.md) | Abbreviate production in titles | Accepted |

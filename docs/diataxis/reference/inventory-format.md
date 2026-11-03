@@ -96,6 +96,9 @@ environment variable names.
 | `owner` | Unless inherited | Responsible owner for this deployment |
 | `config` | No | Partial settings overriding tool and global settings |
 
+The environment value `production` is shown as `PROD` in finding titles; the stored environment
+and stable deployment ID remain unchanged.
+
 Several installations in the same environment can use different IDs, for example `prod-eu`
 and `prod-us`, both with `environment: production`. Keep the ID stable when upgrading or
 changing ownership; the version and owner are not part of finding identity. Deployment entries

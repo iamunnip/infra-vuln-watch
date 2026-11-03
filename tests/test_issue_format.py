@@ -222,7 +222,7 @@ def test_deployment_finding_shows_scope_ownership_and_stable_marker():
     cve = {'id': 'CVE-2026-1234'}
     result = {'status': 'affected', 'fix': None, 'affected_versions': []}
     assert inventory_id(item) == 'openbao/prod-eu'
-    assert issue_format.make_title(item, cve).startswith('[UNKNOWN] [PRODUCTION/prod-eu] [n/a] CVE-2026-1234 OpenBao -')
+    assert issue_format.make_title(item, cve).startswith('[UNKNOWN] [PROD/prod-eu] [n/a] CVE-2026-1234 OpenBao -')
     body = issue_format.make_body(item, cve, result)
     assert '| Deployment | prod-eu |' in body
     assert '| Environment | production |' in body
@@ -236,7 +236,10 @@ def test_deployment_finding_shows_scope_ownership_and_stable_marker():
 @pytest.mark.parametrize('environment, deployment, expected', [
     ('stage', 'stage', '[STAGE]'),
     ('STAGE', 'stage', '[STAGE]'),
-    ('production', 'prod-eu', '[PRODUCTION/prod-eu]'),
+    ('production', 'prod-eu', '[PROD/prod-eu]'),
+    ('production', 'production', '[PROD]'),
+    ('Production', 'production', '[PROD]'),
+    ('prod', 'prod', '[PROD]'),
     ('stage', 'stage-eu', '[STAGE/stage-eu]'),
     ('stage', 'stage-us', '[STAGE/stage-us]'),
 ])
