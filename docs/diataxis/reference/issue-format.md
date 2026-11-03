@@ -32,11 +32,12 @@ The summary is capped at 120 characters; output clients apply their title-length
 | Destination | Presentation |
 | --- | --- |
 | GitHub | Plain issue title, with separate severity and deployment labels |
-| Jira Cloud | Plain ticket summary, with separate labels; Jira priority can be configured through additional create fields |
+| Jira Cloud | Plain ticket summary, with separate labels and a formatted description; Jira priority can be configured through additional create fields |
 | Slack | Plain-text message block plus an escaped title in notification fallback text; Markdown is disabled for fallback text |
 
 Square brackets are visual separators, not special markup or coloured badges. The same shared
-title is used across destinations. Existing issues and tickets are not renamed by later scans.
+title is used across destinations. Later scans change the title of an open ticket only when its score
+changes, as described under [keeping tickets current](#keeping-tickets-current).
 
 ## Description sections
 
@@ -72,7 +73,8 @@ Severity comes from the CVSS score, using the same scale for every CVSS version.
 
 Days count from the day the issue is opened. By default a CVE on the CISA KEV list gets 2 days, whatever
 its score. Otherwise, a CVE with no score has no deadline.
-The date is written once, and nothing tracks or enforces it after that. To change the days, use the global or per-tool
+The date is written once and is not enforced or moved later. Each scan adds the `overdue` label to an open
+issue once its date has passed. To change the days, use the global or per-tool
 [configuration](configuration.md). The table above shows the built-in defaults.
 
 ## Risk summary
@@ -86,7 +88,9 @@ The date is written once, and nothing tracks or enforces it after that. To chang
 `Could not check` means the source was down when the issue was written. It does not mean the CVE
 is safe. A CVE on the KEV list always gets the red `CAUTION` box and the `known-exploited` label.
 
-These results are written once and not updated later.
+The risk table is written once. A later scan flags a CVE that joins the KEV list, or a changed score, with a
+comment and labels, as described under [keeping tickets current](#keeping-tickets-current). EPSS results and
+`Could not check` are not updated.
 
 The box colour follows the severity: `CAUTION` for critical and high, `WARNING` for medium, `NOTE`
 for low, and `IMPORTANT` when there is no severity. A second warning box appears when the result
@@ -99,8 +103,11 @@ needs a manual check.
 | `vuln-watch` | Opened by this tool |
 | `severity-critical`, `severity-high`, `severity-medium`, `severity-low`, `severity-unknown` | The severity |
 | `tool-openbao` | The inventory item. Each tool gets its own label |
-| `needs-review` | NVD did not give enough version data to be sure |
+| `needs-review` | NVD did not give enough version data to be sure, or the reporter used another name for a tool the description mentions |
 | `known-exploited` | The CVE is on the CISA KEV list |
+| `overdue` | The fix date has passed and the ticket is still open |
+| `no-longer-affected` | The latest scan found the installed version is no longer affected. Check and close |
+| `slack-<hash>` | The Slack channel for this hash has been told about this finding. Removing it can repeat the notification |
 
 The score has no label, because it is in the title and the severity label already groups scores.
 
@@ -127,12 +134,36 @@ stateDiagram-v2
 
 The scan never closes or reopens an issue.
 
+## Keeping tickets current
+
+Each normal scan checks the open GitHub issues and Jira tickets of the targets it scans, and adds a
+comment when it changes one:
+
+| When | What changes |
+| --- | --- |
+| The CVE joins the CISA KEV list | Adds `known-exploited` |
+| The fix date in the ticket has passed | Adds `overdue`, unless the version is no longer affected |
+| The score changes | Updates the title and severity label. The fix date stays |
+| The installed version no longer matches | Adds `no-longer-affected` |
+| The version matches again | Removes `no-longer-affected` |
+
+Closed tickets and CVEs in `ignore_cves` are left alone. Dry runs change nothing, and
+`scan.update_existing: false` turns this off. See
+[ADR 0028](../../adr/0028-update-open-tickets-on-each-scan.md).
+
+When Slack is enabled, each change also sends one message with the title, the same text as the comment and
+a link, even with two trackers. `notifications.slack.notify_updates: false` turns this off. See
+[ADR 0033](../../adr/0033-notify-slack-about-ticket-updates.md).
+
 ## Changes made to NVD text
 
 - `@` mentions are broken so nobody gets notified.
 - `<` is escaped.
 - `github.com` links use `redirect.github.com`, which still works when clicked and adds no
-  "mentioned this" note to other projects.
+  "mentioned this" note to other projects. This covers any spelling, such as `http://`, upper case
+  or `www.`.
+- `#12`, `owner/repo#12` and `GH-12` are broken with an invisible character so they link to nothing
+  and add no note. Fragments in other URLs are left alone.
 
 ## Other destinations
 

@@ -1,6 +1,6 @@
 # Inventory format
 
-Each product has one `.yaml` file in `inventory/`. Use a single `version` for a simple record,
+Each product has one `.yaml` or `.yml` file in `inventory/`. Use a single `version` for a simple record,
 or `deployments` for different versions, environments, clusters or owners.
 
 ## Root sections
@@ -33,6 +33,7 @@ Do not repeat product metadata at the root when `tool:` is present.
 | `tool.product` | Yes | `openbao` | NVD product name |
 | `tool.display_name` | No | `OpenBao` | Human-readable product name; defaults to `name` |
 | `tool.keyword` | No | `openbao` | NVD keyword search; defaults to `name` |
+| `tool.aliases` | No | See below | Other vendor and product names used for this tool in CVE data |
 | `tool.team` | See below | `sre` | Default responsible team; can be overridden per deployment |
 | `tool.owner` | See below | `iamunnip` | Default responsible owner; can be overridden per deployment |
 | `version` | Single-version records | `"2.5.5"` | Installed version; mutually exclusive with `deployments` |
@@ -43,6 +44,24 @@ Every resolved installation must have a quoted valid version and non-empty strin
 and `owner`. Product-level ownership is optional when every deployment supplies it.
 Other string fields must also be non-empty. Malformed YAML and invalid settings fail before
 network requests. Duplicate product names across files are rejected.
+
+Reporters often name a product differently from NVD's CPE data. List those names so their version
+data is used:
+
+```yaml
+tool:
+  name: httpd
+  repo: apache/httpd
+  vendor: apache
+  product: http_server
+  aliases:
+    - vendor: Apache Software Foundation
+      product: Apache HTTP Server
+```
+
+Each alias needs exactly `vendor` and `product`. Names compare without regard to case, and aliases
+do not change finding identity. Without a matching alias, a CVE whose description names the tool opens
+a `needs-review` issue when NVD analysts have not listed any products.
 
 ## Multiple versions and environments
 

@@ -29,8 +29,12 @@ CVE for the product and compares versions itself.
 flowchart TD
     start[CVE from NVD] --> rejected{Rejected by NVD, or scored 0.0?}
     rejected -->|Yes| none[No issue]
-    rejected -->|No| inrange{Version inside a listed range?}
-    inrange -->|Yes| affected[Affected: open issue]
+    rejected -->|No| cleared{Reporter lists this version as unaffected?}
+    cleared -->|Yes| analyst{Version inside an NVD analyst range?}
+    analyst -->|Yes| affected[Affected: open issue]
+    analyst -->|No| none
+    cleared -->|No| inrange{Version inside a listed range?}
+    inrange -->|Yes| affected
     inrange -->|No| unread{Any version data unreadable?}
     unread -->|Yes| unknown[Unknown: open issue with needs-review]
     unread -->|No| ranges{Any ranges for our product?}
@@ -39,14 +43,27 @@ flowchart TD
     data -->|No| unknown
     data -->|Yes| ours{Is our product listed?}
     ours -->|Yes| unknown
-    ours -->|No| none
+    ours -->|No| analysed{Do NVD analysts list products?}
+    analysed -->|Yes| none
+    analysed -->|No| named{Does the description name the tool?}
+    named -->|Yes| unknown
+    named -->|No| none
 ```
 
 | Answer | When | Result |
 | --- | --- | --- |
 | Affected | The version is inside a listed range | Issue |
-| Not affected | Ranges exist and the version is outside them, or the CVE is about another product | No issue |
-| Unknown | The data is missing or cannot be read | Issue with `needs-review` |
+| Not affected | Ranges exist and the version is outside them, the reporter lists it as unaffected, or the CVE is about another product | No issue |
+| Unknown | The data is missing or cannot be read, or the reporter names another product but the description names this tool | Issue with `needs-review` |
+
+Reporters spell names freely, so one product can be `apache` and `http_server` in NVD analyst data
+but `Apache Software Foundation` and `Apache HTTP Server` in reporter data. A miss on reporter names
+alone is therefore not proof that a CVE is about something else. Add the other spelling as a
+[tool alias](../reference/inventory-format.md#product-fields) to get an exact answer.
+[ADR 0025](../../adr/0025-widen-reporter-name-and-status-matching.md) has the reasoning.
+
+Severity filters run before version matching. They never apply to known exploited CVEs
+([ADR 0026](../../adr/0026-known-exploited-cves-pass-severity-filters.md)).
 
 A CVE that NVD rejected, or that has a CVSS score of 0.0, never gets an issue. A CVE with no score
 at all still does, because no score does not mean no risk.
@@ -77,10 +94,12 @@ wait, so it reads the list after the first has finished.
 
 - The tool knows versions, not how you use the tool. An affected version may not be exploitable
   in your setup.
-- A CVE that NVD has not published, or that names a different vendor or product than your
-  inventory file, will not be matched.
+- A CVE that NVD has not published will not be matched. Nor will one that names a different vendor
+  or product than your inventory file and aliases, unless its description names the tool, which
+  opens a review issue instead.
 - It does not check the libraries inside a tool.
-- An issue does not change after it opens, so a CVE added to the KEV list later is not flagged.
+- Open issues are only brought up to date when a scan runs, so a CVE added to the KEV list later is
+  flagged at the next scan, not when it is listed.
 
 See also [ADR 0002](../../adr/0002-search-nvd-twice-and-compare-versions-locally.md) and
 [ADR 0003](../../adr/0003-report-unknown-results.md).

@@ -14,7 +14,7 @@
 | Component | A responsibility within a container, implemented here by Python modules |
 | Deployment | One installed instance with a stable ID, environment, version and ownership |
 | ADF | Atlassian Document Format used for Jira Cloud descriptions |
-| Delivery receipt | A local record of an acknowledged Slack notification |
+| Delivery receipt | A local record of an acknowledged Slack notification, also held on tickets as a `slack-<hash>` label |
 | arc42 | The 12-section structure used for this architecture description |
 
 [Architecture index](README.md)

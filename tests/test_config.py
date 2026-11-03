@@ -78,13 +78,13 @@ def test_invalid_routing_and_scan_settings_fail_validation(overrides):
 def test_recursive_overrides_and_list_replacement():
     global_config = {'outputs': {'jira': {'base_url': 'https://example.atlassian.net',
         'project': 'SEC', 'fields': {'priority': {'name': 'High'}}}},
-        'scan': {'ignore_cves': ['one', 'two']}}
+        'scan': {'ignore_cves': ['CVE-2026-1001', 'CVE-2026-1002']}}
     merged = merge_config(global_config, {'outputs': {'jira': {'enabled': True}},
-        'scan': {'ignore_cves': ['three']}})
+        'scan': {'ignore_cves': ['CVE-2026-1003']}})
     assert merged['outputs']['jira']['project'] == 'SEC'
     assert merged['outputs']['jira']['fields'] == {'priority': {'name': 'High'}}
-    assert merged['scan']['ignore_cves'] == ['three']
-    assert global_config['scan']['ignore_cves'] == ['one', 'two']
+    assert merged['scan']['ignore_cves'] == ['CVE-2026-1003']
+    assert global_config['scan']['ignore_cves'] == ['CVE-2026-1001', 'CVE-2026-1002']
 
 
 def test_cross_field_requirements_apply_to_resolved_tool():

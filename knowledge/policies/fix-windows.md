@@ -28,5 +28,6 @@ The table describes defaults rather than universal deadlines. Global `config.yam
 can be overridden for each inventory tool under `config.fix_days`. Overrides merge per
 severity. Known exploitation uses its own `known_exploited` value, independently of `critical`.
 Deadlines count calendar days from the UTC issue-open date, and changes affect new issues only.
+A missed deadline should be visible on the ticket, so scans label open tickets as `overdue`.
 Unscored CVEs can be given an `unknown` deadline; `null` keeps no deadline. See the
 [configuration reference](../../docs/diataxis/reference/configuration.md) for the supported schema.

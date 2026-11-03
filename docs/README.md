@@ -26,7 +26,7 @@ Use this map to choose the documentation to update:
 | --- | --- |
 | External integration | C4 context and container views; arc42 sections 3 and 5 |
 | Module responsibility | C4 component view; arc42 section 5 |
-| Workflow or hosting | C4 deployment view; arc42 sections 6–8 |
+| Workflow or hosting | C4 deployment view; arc42 sections 6 to 8 |
 | Commands, inventory or issue behaviour | Diataxis reference and affected guides |
 | Domain facts or policies | OKF concept files and `knowledge/log.md` |
 | Significant architecture decision | New ADR and updated decision index |

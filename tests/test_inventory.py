@@ -186,3 +186,37 @@ version: "1.2.3"
 def test_invalid_grouped_sections_fail_cleanly(tmp_path, text, message):
     with pytest.raises(ValueError, match=message):
         load_item(write(tmp_path, text))
+
+
+def test_yml_files_are_scanned_alongside_yaml(tmp_path):
+    (tmp_path / 'a.yaml').write_text(GOOD)
+    (tmp_path / 'b.yml').write_text(GOOD.replace('name: a', 'name: b'))
+    assert [item['name'] for item in load_inventory(tmp_path)] == ['a', 'b']
+
+
+def test_same_tool_in_yaml_and_yml_is_rejected(tmp_path):
+    (tmp_path / 'a.yaml').write_text(GOOD)
+    (tmp_path / 'a.yml').write_text(GOOD)
+    with pytest.raises(ValueError, match='Two inventory files'):
+        load_inventory(tmp_path)
+
+
+def test_aliases_are_kept_for_every_target(tmp_path):
+    (tmp_path / 'a.yaml').write_text(
+        'tool:\n  name: a\n  repo: o/a\n  vendor: o\n  product: a\n  team: sre\n  owner: me\n'
+        '  aliases:\n    - vendor: Other Name\n      product: A Server\n'
+        'deployments:\n  - id: prod\n    version: "1.0"\n')
+    (target,) = load_inventory(tmp_path)
+    assert target['aliases'] == [{'vendor': 'Other Name', 'product': 'A Server'}]
+
+
+@pytest.mark.parametrize('aliases', [
+    'aliases: name\n',
+    'aliases:\n  - name\n',
+    'aliases:\n  - vendor: only\n',
+    'aliases:\n  - vendor: v\n    product: p\n    extra: x\n',
+    'aliases:\n  - vendor: ""\n    product: p\n',
+])
+def test_invalid_aliases_are_rejected(tmp_path, aliases):
+    with pytest.raises(ValueError, match='alias'):
+        load_item(write(tmp_path, GOOD + aliases))

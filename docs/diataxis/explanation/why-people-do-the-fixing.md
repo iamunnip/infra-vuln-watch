@@ -33,10 +33,11 @@ the version after the upgrade keeps the claim honest, and the pull request recor
 
 Closing an issue as soon as the inventory changes would be possible, but a closed issue means a
 person has finished the work. "Not planned" also records a real decision, so the tool treats any
-closed issue as final and does not reopen it.
+closed issue as final and does not reopen it. When the inventory no longer matches a CVE, the scan adds a
+`no-longer-affected` label and a comment, which leaves the decision with a person.
 
 ## What this costs
 
 - Someone has to close issues, including the extra ones a single upgrade fixes.
-- Nothing warns anyone when a fix date passes.
+- A missed fix date is only flagged when a scan runs, and the `overdue` label does not make anyone act.
 - The inventory can drift away from the real system if people forget to update it.

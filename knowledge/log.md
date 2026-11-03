@@ -1,6 +1,12 @@
 # Directory Update Log
 
 ## 2026-11-03
+* **Update**: Noted that scans flag open issues but people still close them in the [fix process](/policies/vulnerability-fix-process.md).
+* **Update**: Added ticket-held delivery records and update notifications to [finding delivery](/policies/finding-delivery.md).
+* **Update**: Added ticket updates, temporary exceptions, backing off and Jira formatting to [finding delivery](/policies/finding-delivery.md).
+* **Update**: Noted that missed deadlines are shown on tickets in [fix windows](/policies/fix-windows.md).
+* **Update**: Severity filters no longer suppress known exploited CVEs in [finding delivery](/policies/finding-delivery.md).
+* **Update**: Documented free-text reporter names and `unaffected` entries inside ranges in [NVD record shapes](/vulnerability-data/nvd-record-shapes.md).
 * **Update**: Documented the production-to-PROD heading alias without identity changes in [finding delivery](/policies/finding-delivery.md).
 * **Update**: Added severity-first and environment-first heading guidance and Slack fallback visibility to [finding delivery](/policies/finding-delivery.md).
 * **Update**: Clarified the upstream GitHub repository versus finding destinations in [OpenBao inventory notes](/products/openbao.md).

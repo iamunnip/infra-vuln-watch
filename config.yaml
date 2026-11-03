@@ -15,7 +15,10 @@ scan:
   min_severity: low
   include_unknown_severity: true
   report_unknown_versions: true
+  # Each entry is a CVE ID, or a mapping with id, reason and expires.
   ignore_cves: []
+  # Add labels and comments to open tickets when their facts change.
+  update_existing: true
 
 sources:
   nvd:
@@ -48,3 +51,5 @@ notifications:
     webhook_env: SLACK_WEBHOOK_URL
     repeat: false
     state_file: .vuln-watch/slack.json
+    # Also tell the channel when a scan updates an open ticket.
+    notify_updates: true

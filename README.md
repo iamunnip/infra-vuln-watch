@@ -42,6 +42,12 @@ Each issue also shows:
 - **Who is responsible:** the team and owner from the inventory.
 - **Labels:** `severity-*`, `tool-*`, and `known-exploited` or `needs-review` when they apply.
 
+Each later scan keeps open tickets current. It adds `known-exploited`, `overdue` or
+`no-longer-affected` with a comment, updates a changed score in the title and tells Slack when enabled. It
+never closes a ticket.
+Jira tickets get the same formatted details as GitHub issues, ignored CVEs can have a reason and expiry
+date, and output services that ask the scanner to slow down are respected.
+
 See the [issue format](docs/diataxis/reference/issue-format.md) for the full details.
 
 ## Why not just ask NVD for my version?
@@ -70,7 +76,7 @@ flowchart LR
     selected -->|Yes| route[Independent configured destinations]
     route --> github[GitHub issue if not previously reported]
     route --> jira[Jira Cloud ticket if not previously reported]
-    route --> slack[Slack notification if receipt is absent or repeat is enabled]
+    route --> slack[Slack notification if no receipt or ticket label exists, or repeat is enabled]
     route --> console[Console when no destination is enabled]
 ```
 
@@ -90,11 +96,13 @@ local delivery receipts. It still reads enabled vulnerability data sources.
 
 | Path | What it holds |
 | --- | --- |
-| `inventory/` | One YAML file per product, with versions and ownership per deployment |
+| `inventory/` | One `.yaml` or `.yml` file per product, with versions and ownership per deployment |
 | [`config.yaml`](config.yaml) | Global scan, source, delivery, notification and deadline settings |
 | `src/infra_vuln_watch/` | Packages for CLI, application, configuration, domain, clients, persistence and reporting |
 | `tests/` | Unit tests, run with `pytest` |
 | `pyproject.toml` | Project settings and dependencies |
+| `requirements.txt` | Hash-locked runtime packages installed by the scan workflow |
+| [`SECURITY.md`](SECURITY.md) | How to report a bug in this tool privately |
 | `.github/workflows/` | The scan, started by hand, and the tests |
 | [`docs/`](docs/README.md) | Human documentation: Diataxis, arc42, C4 and ADRs |
 | [`knowledge/`](knowledge/index.md) | Domain knowledge, as an OKF bundle |
@@ -145,7 +153,7 @@ which permits use, modification and redistribution subject to retaining its copy
 permission notice. No affiliation with or license to third-party trademarks is granted.
 See [third-party notices](THIRD_PARTY_NOTICES.md) for dependency licenses and data attribution.
 
-Dependabot is configured to check Python dependencies and GitHub Actions weekly once the
+The scan workflow installs hash-locked packages from `requirements.txt`. Dependabot is configured to check Python dependencies and GitHub Actions weekly once the
 configuration is merged to the default branch. Dependency alerts and automatic security
 updates also depend on the repository's GitHub security settings.
 

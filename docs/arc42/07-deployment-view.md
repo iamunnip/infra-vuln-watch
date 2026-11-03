@@ -15,6 +15,11 @@ and `JIRA_API_TOKEN`; Slack uses `SLACK_WEBHOOK_URL`, mapped from Actions secret
 is restored and saved using a branch-specific Actions cache, including on failed scans.
 Caches are best effort and may be evicted. Custom receipt paths require corresponding workflow
 cache changes. External tickets persist in their respective services.
+GitHub evicts a cache left unused for 7 days, so manual scans further apart than that can lose
+receipts. Tickets also record delivery, so this repeats notifications only for Slack without a tracker
+([ADR 0032](../adr/0032-record-slack-delivery-on-tickets.md)).
+The scan installs hash-locked packages from `requirements.txt` and downloads nothing else
+([ADR 0027](../adr/0027-lock-scan-dependencies-and-add-quality-checks.md)).
 Workflow concurrency serialises Actions scans; it does not lock independent local executions.
 
 The Slack receipt cache restore and save steps are both pinned to `actions/cache` v6.1.0's

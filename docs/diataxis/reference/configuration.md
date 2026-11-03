@@ -31,6 +31,7 @@ scan:
   include_unknown_severity: true
   report_unknown_versions: true
   ignore_cves: []
+  update_existing: true
 sources:
   nvd:
     product_search: true
@@ -61,6 +62,7 @@ outputs:
     api_url: https://api.github.com
     timeout: 30
     create_wait: 3
+    max_rate_limit_wait: 120
   jira:
     enabled: false
     base_url: ''
@@ -70,6 +72,7 @@ outputs:
     token_env: JIRA_API_TOKEN
     timeout: 30
     create_wait: 1
+    max_rate_limit_wait: 120
     fields: {}
 notifications:
   slack:
@@ -77,8 +80,10 @@ notifications:
     webhook_env: SLACK_WEBHOOK_URL
     timeout: 30
     repeat: false
+    notify_updates: true
     state_file: .vuln-watch/slack.json
     send_wait: 1
+    max_rate_limit_wait: 120
 ```
 
 These are also the built-in defaults. `{}` is a valid empty configuration; an empty file or
@@ -118,9 +123,33 @@ YAML cannot override it. Dry runs still read enabled vulnerability data sources.
 
 `min_severity` accepts `low`, `medium`, `high` or `critical`. Unknown severity is controlled
 separately by `include_unknown_severity`. `report_unknown_versions` controls whether uncertain
-version matches are reported. `ignore_cves` suppresses the listed CVE IDs. Rejected records
-and score 0.0 remain excluded. Filters also apply to known exploited findings; restrictive
-filters can suppress them before enrichment.
+version matches are reported. Rejected records and score 0.0 remain excluded.
+
+`ignore_cves` suppresses the listed CVEs. An entry is a CVE ID, or a mapping that records why and for
+how long:
+
+```yaml
+scan:
+  ignore_cves:
+    - CVE-2026-1111
+    - id: CVE-2026-2222
+      reason: The affected plugin is not installed
+      expires: 2027-01-31
+```
+
+An ignore lasts through its `expires` date, and the finding can be reported again after that. Entries
+must look like CVE IDs, so a typing mistake fails validation. Each scan prints its ignores, with
+their reasons and any that have expired. See
+[ADR 0030](../../adr/0030-give-ignored-cves-reasons-and-expiry-dates.md).
+
+`update_existing`, on by default, keeps open tickets current on each normal scan. See
+[keeping tickets current](issue-format.md#keeping-tickets-current).
+
+`min_severity` and `include_unknown_severity` do not apply to known exploited CVEs, so a strict
+severity filter can still produce a low-severity issue when the CVE is under attack. Known exploited
+means listed in the CISA KEV catalog, or in NVD's copy of it when `nvd_fallback` is on.
+`ignore_cves` and `report_unknown_versions` still apply to them. See
+[ADR 0026](../../adr/0026-known-exploited-cves-pass-severity-filters.md).
 
 At least one of NVD's product or keyword searches must remain enabled for an enabled tool.
 Disabling one reduces coverage. NVD's request intervals cannot be configured below 6.5 seconds
@@ -131,8 +160,8 @@ EPSS and KEV downloads can be disabled independently. KEV's `nvd_fallback` separ
 whether NVD's copied exploitation fields are used. Issues distinguish disabled downloads from
 unavailable sources. KEV catalogs are shared within a run when their source settings match.
 
-Timeouts accept 1–300 seconds; attempts accept integers 1–10; retry waits accept 0–3600 seconds.
-EPSS batch size accepts integers 1–100. HTTP endpoints for NVD, EPSS and KEV remain the official
+Timeouts accept 1 to 300 seconds; attempts accept integers 1 to 10; retry waits accept 0 to 3600 seconds.
+EPSS batch size accepts integers 1 to 100. HTTP endpoints for NVD, EPSS and KEV remain the official
 sources. Only operational options are configurable; raw secrets are not accepted in YAML.
 
 ## Destinations
@@ -151,12 +180,19 @@ still be structurally complete for an enabled Jira destination, including in dry
   additional Jira create fields, such as `priority` or `customfield_12345`. The configured issue
   type must allow them on its create screen. Project, issue type, summary, description and
   labels are controlled by the scanner and cannot be overridden through `fields`.
-  Descriptions preserve the finding as plain text inside Atlassian Document Format; GitHub
-  Markdown styling is not converted into Jira rich text. `create_wait` is at least 1 second.
+  Descriptions use Atlassian Document Format with panels, tables, headings and lists, and fall
+  back to plain text if Jira rejects that with a 400 response. CVE text cannot create mentions or
+  media. `create_wait` is at least 1 second.
 - **Slack:** set `enabled: true` and provide an incoming webhook in the variable named by
   `webhook_env`. It must be a Slack HTTPS incoming webhook URL, including GovSlack if used.
   The webhook determines the channel. Messages use plain-text blocks and an escaped title as notification fallback text to prevent
   CVE text from triggering Slack mentions. `send_wait` is at least 1 second.
+
+All three accept `max_rate_limit_wait`, which defaults to 120 seconds and accepts 0 to 3600. When a
+service asks the scanner to slow down, it waits as asked and retries once. If the wait would be longer
+than this setting, or the retry is limited too, nothing more goes to that destination during the run.
+Other destinations continue, the run exits with 1, and the next scan catches up. See
+[ADR 0031](../../adr/0031-respect-rate-limits-on-outputs.md).
 
 Score 0.0 exclusion, search endpoint URLs, identity markers and required tracker labels are implementation
 invariants rather than configurable values. The inventory path and selected config path remain
@@ -166,22 +202,29 @@ CLI options.
 
 Each ticket destination reads its own finding history, including closed tickets. Legacy records
 use `tool/CVE`; deployments use `tool/deployment-id/CVE`. Environments are tracked independently.
-A finding reported to GitHub can still create a missing Jira ticket, and vice versa. Existing
-tickets are not refreshed, closed or reopened. Output setup fails before scanning if a selected
+A finding reported to GitHub can still create a missing Jira ticket, and vice versa. Open tickets
+are updated when their facts change, and tickets are never closed or reopened. Output setup fails before scanning if a selected
 tracker's history cannot be read. During reporting, a failed destination does not prevent
 attempts to the others or later findings, but makes the run exit with code 1.
 
 Slack uses a separate atomic receipt file at `state_file`. Receipts include a hash of the
 webhook destination and the finding identity, never the secret URL. Successfully notified
 findings are skipped on later runs; failed notifications can retry without recreating tickets.
-Set `repeat: true` to notify about every selected finding on every run and bypass local receipts.
-Slack does not read channel history. A notification retry may contain only the NVD link if
-tickets were created on a previous run.
+A successful notification also adds a `slack-<hash>` label to the finding's tickets, using a short
+one-way hash of the webhook, and a finding with that label is treated as delivered. Each scan also adds it
+to tickets whose delivery is recorded only in the receipt file. See
+[ADR 0032](../../adr/0032-record-slack-delivery-on-tickets.md).
+Set `repeat: true` to notify about every selected finding on every run and bypass receipts and labels.
+Slack does not read channel history. A notification retry links the finding's existing tickets.
+
+`notify_updates`, on by default, also sends a message when a scan updates an open ticket. See
+[keeping tickets current](issue-format.md#keeping-tickets-current).
 
 Persist the receipt file between runs for deduplication. The supplied GitHub workflow restores
 and saves `.vuln-watch/` through a branch-specific Actions cache, including after partial failures.
-If you choose a different directory, update the workflow's cache path. Cache eviction or a
-missing receipt file can cause repeat notifications. A process interruption after a successful
+If you choose a different directory, update the workflow's cache path. With a tracker enabled, ticket
+labels prevent repeats when the file is lost. With Slack alone, cache eviction or a missing receipt file
+can cause repeat notifications, and GitHub evicts caches unused for 7 days. A process interruption after a successful
 remote write but before its receipt is saved can also cause a repeat; delivery is not exactly
 once. Atomic writes prevent torn state files, but separate processes must not write the same
 file concurrently. The workflow serialises its scan jobs; local invocations require the same
@@ -198,7 +241,7 @@ python -m infra_vuln_watch --config ./config.yaml --inventory ./inventory --dry-
 ```
 
 Paths resolve from the current working directory, not from the configuration file's directory.
-A configuration file should live outside the inventory directory, whose `.yaml` files are all
+A configuration file should live outside the inventory directory, whose `.yaml` and `.yml` files are all
 interpreted as tool records. See [inventory format](inventory-format.md) and
 [command line](command-line.md).
 

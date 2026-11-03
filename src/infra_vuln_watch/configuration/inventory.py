@@ -12,7 +12,7 @@ from infra_vuln_watch.domain.identity import inventory_id
 PRODUCT_FIELDS = ['name', 'repo', 'vendor', 'product']
 TARGET_FIELDS = ['version', 'team', 'owner']
 DEPLOYMENT_FIELDS = {'id', 'environment', 'version', 'team', 'owner', 'config'}
-TOOL_FIELDS = set(PRODUCT_FIELDS) | {'display_name', 'keyword', 'team', 'owner'}
+TOOL_FIELDS = set(PRODUCT_FIELDS) | {'display_name', 'keyword', 'team', 'owner', 'aliases'}
 
 
 def normalise_document(document, source):
@@ -42,6 +42,17 @@ def require_strings(item, fields, source):
             if field == 'version':
                 raise ValueError(f'{source}: put quotes around the version, like version: "2.7.2"')
             raise ValueError(f"{source}: '{field}' must be a non-empty string")
+
+
+def validate_aliases(item, source):
+    """Check the other vendor and product names that reporters use for this tool."""
+    aliases = item.get('aliases', [])
+    if not isinstance(aliases, list):
+        raise ValueError(f'{source}: aliases must be a list of vendor and product names')
+    for alias in aliases:
+        if not isinstance(alias, dict) or alias.keys() != {'vendor', 'product'}:
+            raise ValueError(f'{source}: each alias must have only vendor and product')
+        require_strings(alias, ['vendor', 'product'], f'{source}: alias')
 
 
 def validate_target(item, source):
@@ -106,6 +117,7 @@ def load_item(path):
     for field in ('keyword', 'display_name', 'team', 'owner'):
         if field in item:
             require_strings(item, [field], path)
+    validate_aliases(item, path)
     item.setdefault('keyword', item['name'])
     item.setdefault('display_name', item['name'])
     if 'config' in item:
@@ -116,9 +128,9 @@ def load_item(path):
 
 def load_inventory(directory):
     """Return one validated scan target per legacy record or deployment."""
-    paths = sorted(Path(directory).glob('*.yaml'))
+    paths = sorted([*Path(directory).glob('*.yaml'), *Path(directory).glob('*.yml')])
     if not paths:
-        raise ValueError(f'No .yaml files found in {directory}')
+        raise ValueError(f'No .yaml or .yml files found in {directory}')
     items = []
     names = set()
     identifiers = set()

@@ -26,9 +26,15 @@ def clients(monkeypatch):
     monkeypatch.setenv('SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/test/space/secret')
     github = Mock()
     github.get_reported_ids.return_value = set()
+    github.reported_links = {}
+    github.open_findings = {}
+    github.all_findings = {}
     github.create_issue.return_value = 'https://github.com/o/r/issues/1'
     jira = Mock()
     jira.get_reported_ids.return_value = set()
+    jira.reported_links = {}
+    jira.open_findings = {}
+    jira.all_findings = {}
     jira.create_issue.return_value = 'https://example.atlassian.net/browse/SEC-1'
     slack = Mock()
     slack.needs_delivery.return_value = True
@@ -146,3 +152,14 @@ def test_shared_title_format_is_used_for_github_jira_and_slack(clients, tmp_path
     assert title.startswith(f'[UNKNOWN] {expected} [n/a] CVE-2026-1234 tool -')
     assert jira.create_issue.call_args.args[0] == title
     assert slack.send.call_args.args[1] == title
+
+
+def test_retried_slack_notification_links_the_existing_ticket(clients, tmp_path):
+    github, _, slack = clients
+    github.get_reported_ids.return_value = {'tool/CVE-2026-1234'}
+    github.reported_links = {'tool/CVE-2026-1234': 'https://github.com/o/r/issues/9'}
+    tool = item(overrides={'notifications': {'slack': {'enabled': True, 'state_file': str(tmp_path / 'state.json')}}})
+    output = router.OutputRouter([tool])
+    assert output.report(tool, CVE, RESULT, RISK)
+    github.create_issue.assert_not_called()
+    assert 'https://github.com/o/r/issues/9' in slack.send.call_args.args[2]

@@ -250,3 +250,44 @@ def test_title_prioritises_environment_and_disambiguates_deployments(environment
     assert '[CVE-2026-1234]' not in title
     assert 'OpenBao [' not in title
     assert '@someone' not in title
+
+
+@pytest.mark.parametrize('text', [
+    'see http://github.com/a/b/issues/1',
+    'see https://github.com/a/b/issues/1',
+    'see HTTPS://GitHub.com/a/b/issues/1',
+    'see www.github.com/a/b/issues/1',
+    'see https://www.github.com/a/b/issues/1',
+    'see github.com/a/b/issues/1',
+])
+def test_every_spelling_of_a_github_address_is_redirected(text):
+    assert issue_format.clean_text(text) == 'see https://redirect.github.com/a/b/issues/1'
+
+
+@pytest.mark.parametrize('text,plain', [
+    ('fixed in a/b#12', 'fixed in a/b#12'),
+    ('fixed in #12', 'fixed in #12'),
+    ('fixed in GH-12', 'fixed in GH-12'),
+    ('fixed in gh-12', 'fixed in gh-12'),
+])
+def test_issue_references_are_broken(text, plain):
+    cleaned = issue_format.clean_text(text)
+    assert cleaned != text
+    assert '​' in cleaned
+    assert cleaned.replace('​', '') == plain
+
+
+@pytest.mark.parametrize('text', [
+    'see https://example.com/page#123',
+    'see https://redirect.github.com/a/b/issues/1',
+    'see https://gist.github.com/a/1',
+    'see notagithub.com/a',
+    'colour #fff and step #a1',
+])
+def test_other_text_and_urls_are_left_alone(text):
+    assert issue_format.clean_text(text) == text
+
+
+def test_safe_url_keeps_a_numeric_fragment_working():
+    assert issue_format.safe_url('https://example.com/page#123') == 'https://example.com/page#123'
+    assert issue_format.safe_url('HTTP://github.com/a/b') == 'https://redirect.github.com/a/b'

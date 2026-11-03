@@ -8,7 +8,11 @@ We read both, turn them into simple version ranges, and check the installed
 version against each range.
 """
 
+import re
+
 from packaging.version import InvalidVersion, Version
+
+from infra_vuln_watch.domain.cve_details import get_description
 
 AFFECTED = "affected"
 NOT_AFFECTED = "not_affected"
@@ -62,7 +66,13 @@ def range_from_cpe_match(match, cpe_version):
     return make_range(start=cpe_version, end=cpe_version, end_included=True)
 
 
-def ranges_from_configurations(cve, vendor, product):
+def product_names(vendor, product, aliases=()):
+    """Return every lower-case (vendor, product) pair that names this tool."""
+    pairs = [(vendor, product), *((alias["vendor"], alias["product"]) for alias in aliases)]
+    return {(name.lower(), title.lower()) for name, title in pairs}
+
+
+def ranges_from_configurations(cve, names):
     """Return (ranges, could_not_read, products_seen) from the NVD analyst data."""
     ranges = []
     could_not_read = False
@@ -78,7 +88,7 @@ def ranges_from_configurations(cve, vendor, product):
                     could_not_read = True
                     continue
                 parts = criteria.split(":")
-                if parts[3].lower() != vendor.lower() or parts[4].lower() != product.lower():
+                if (parts[3].lower(), parts[4].lower()) not in names:
                     continue
                 if not match.get("vulnerable"):
                     continue
@@ -95,19 +105,28 @@ def range_from_text(text):
     start = end = None
     start_included = end_included = True
 
-    for condition in text.split(","):
-        condition = condition.strip()
+    conditions = [condition.strip() for condition in text.split(",") if condition.strip()]
+    if not conditions:
+        raise InvalidVersion(f"no version in {text!r}")
+    for condition in conditions:
         # Check two character operators first, so ">=" is not read as ">".
         if condition.startswith(">="):
-            start, start_included = condition[2:].strip(), True
+            value = start = condition[2:].strip()
+            start_included = True
         elif condition.startswith("<="):
-            end, end_included = condition[2:].strip(), True
+            value = end = condition[2:].strip()
+            end_included = True
         elif condition.startswith(">"):
-            start, start_included = condition[1:].strip(), False
+            value = start = condition[1:].strip()
+            start_included = False
         elif condition.startswith("<"):
-            end, end_included = condition[1:].strip(), False
+            value = end = condition[1:].strip()
+            end_included = False
         else:
-            start = end = condition.lstrip("= ")
+            value = start = end = condition.lstrip("= ")
+        # An empty value would otherwise widen the range to every version.
+        if not value:
+            raise InvalidVersion(f"no version in {text!r}")
 
     return make_range(start, start_included, end, end_included)
 
@@ -130,7 +149,7 @@ def range_from_affected_entry(entry):
     return range_from_text(version)
 
 
-def ranges_from_affected(cve, vendor, product):
+def ranges_from_affected(cve, names):
     """Return (ranges, could_not_read, products_seen) from the reporter data."""
     ranges = []
     could_not_read = False
@@ -139,9 +158,7 @@ def ranges_from_affected(cve, vendor, product):
     for source in cve.get("affected", []):
         for data in source.get("affectedData", []):
             products_seen = True
-            if str(data.get("vendor")).lower() != vendor.lower():
-                continue
-            if str(data.get("product")).lower() != product.lower():
+            if (str(data.get("vendor")).lower(), str(data.get("product")).lower()) not in names:
                 continue
 
             for entry in data.get("versions") or []:
@@ -157,6 +174,50 @@ def ranges_from_affected(cve, vendor, product):
                     could_not_read = True
 
     return ranges, could_not_read, products_seen
+
+
+def unaffected_range(entry):
+    """Turn an "unaffected" entry into a range, reading ends like "2.5.*" as the whole branch."""
+    version = str(entry.get("version", "")).strip()
+    start = None if version.lower() in NO_VERSION_WORDS else version
+    for field, included in (("lessThan", False), ("lessThanOrEqual", True)):
+        end = entry.get(field)
+        if not end:
+            continue
+        if end == "*":
+            return make_range(start=start)
+        if isinstance(end, str) and end.endswith(".*"):
+            parts = end[:-2].split(".")
+            parts[-1] = str(int(parts[-1]) + 1)
+            return make_range(start=start, end=".".join(parts))
+        return make_range(start=start, end=end, end_included=included)
+    if start is None:
+        raise InvalidVersion("no version in unaffected entry")
+    return range_from_text(version)
+
+
+def stated_unaffected(cve, names, installed):
+    """Return True if the reporter data explicitly lists the installed version as unaffected."""
+    for source in cve.get("affected", []):
+        for data in source.get("affectedData", []):
+            if (str(data.get("vendor")).lower(), str(data.get("product")).lower()) not in names:
+                continue
+            for entry in data.get("versions") or []:
+                if entry.get("status") != "unaffected":
+                    continue
+                try:
+                    if is_in_range(installed, unaffected_range(entry)):
+                        return True
+                except (TypeError, ValueError):
+                    continue  # An unreadable statement cannot clear a version.
+    return False
+
+
+def mentions_keyword(cve, keyword):
+    """Return True if the description holds every word of the search, as whole words."""
+    description = get_description(cve)
+    return all(re.search(rf"(?<!\w){re.escape(word)}(?!\w)", description, re.IGNORECASE)
+               for word in keyword.split())
 
 
 def describe_range(version_range):
@@ -182,7 +243,7 @@ def list_affected_versions(ranges, installed):
     def lowest_first(version_range):
         return version_range["end"] or version_range["start"] or Version("0")
 
-    versions = {}
+    versions: dict[str, bool] = {}
     for version_range in sorted(ranges, key=lowest_first):
         text = describe_range(version_range)
         versions[text] = versions.get(text, False) or is_in_range(installed, version_range)
@@ -193,34 +254,37 @@ def fix_text(matching_ranges):
     """Describe the fix, using the highest end version so that every range is cleared."""
     if any(r["end"] is None for r in matching_ranges):
         return None
-    with_end = matching_ranges
 
-    highest = max(with_end, key=lambda r: (r["end"], r["end_included"]))
+    highest = max(matching_ranges, key=lambda r: (r["end"], r["end_included"]))
     if highest["end_included"]:
         return f"a version newer than {highest['end']}"
     return f"version {highest['end']} or later"
 
 
-def check_version(cve, vendor, product, installed_version):
+def check_version(cve, vendor, product, installed_version, aliases=(), keyword=None):
     """Return the status, fix and affected versions for this CVE and installed version.
 
     When NVD does not give us enough to decide, the status is UNKNOWN. We report
     those for a human to check, because hiding a real vulnerability is worse
     than asking someone to look at a false alarm.
     """
-    config_ranges, config_unread, config_seen = ranges_from_configurations(cve, vendor, product)
-    affected_ranges, affected_unread, affected_seen = ranges_from_affected(cve, vendor, product)
+    names = product_names(vendor, product, aliases)
+    config_ranges, config_unread, config_seen = ranges_from_configurations(cve, names)
+    affected_ranges, affected_unread, affected_seen = ranges_from_affected(cve, names)
 
     ranges = config_ranges + affected_ranges
-    could_not_read = config_unread or affected_unread
     installed = Version(installed_version)
+    # A reporter's own "unaffected" overrides its broad ranges, but not NVD's analyst data.
+    cleared = stated_unaffected(cve, names, installed)
+    could_not_read = config_unread or (affected_unread and not cleared)
 
     affected_versions = list_affected_versions(ranges, installed)
 
     def answer(status, fix=None):
         return {"status": status, "fix": fix, "affected_versions": affected_versions}
 
-    matching = [r for r in ranges if is_in_range(installed, r)]
+    candidates = config_ranges if cleared else ranges
+    matching = [r for r in candidates if is_in_range(installed, r)]
     if matching:
         return answer(AFFECTED, fix_text(matching))
 
@@ -228,12 +292,16 @@ def check_version(cve, vendor, product, installed_version):
         return answer(UNKNOWN)
 
     # Our product is listed and our version is outside every listed range.
-    if ranges:
+    if ranges or cleared:
         return answer(NOT_AFFECTED)
 
     # NVD lists products, but ours has no version data or is not one of them.
     if config_seen or affected_seen:
-        if product_is_listed(cve, vendor, product):
+        if product_is_listed(cve, names):
+            return answer(UNKNOWN)
+        # Reporters spell names freely, so a miss there is not proof the CVE is about something
+        # else if its text names this tool. NVD analysts use the inventory's own CPE names.
+        if not config_seen and keyword and mentions_keyword(cve, keyword):
             return answer(UNKNOWN)
         return answer(NOT_AFFECTED)
 
@@ -241,12 +309,10 @@ def check_version(cve, vendor, product, installed_version):
     return answer(UNKNOWN)
 
 
-def product_is_listed(cve, vendor, product):
-    """Return True if the CVE's "affected" data names this vendor and product."""
+def product_is_listed(cve, names):
+    """Return True if the CVE's "affected" data names this tool."""
     for source in cve.get("affected", []):
         for data in source.get("affectedData", []):
-            same_vendor = str(data.get("vendor")).lower() == vendor.lower()
-            same_product = str(data.get("product")).lower() == product.lower()
-            if same_vendor and same_product:
+            if (str(data.get("vendor")).lower(), str(data.get("product")).lower()) in names:
                 return True
     return False

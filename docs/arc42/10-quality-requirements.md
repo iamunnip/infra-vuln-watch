@@ -23,5 +23,12 @@
 | Two deployments share product and search settings | Fetch NVD candidates once per run, then match independently |
 | Deployment config overrides a deadline | Preserve other tool and global values |
 | A CVE scores 0.0 | No issue is opened |
+| A reporter names the tool differently and its text mentions the tool | A `needs-review` issue is opened, not silently dropped |
+| A severity filter would hide a known exploited CVE | The finding is still reported |
+| One CVE record is malformed | The run fails, and other findings are still delivered |
+| A CVE joins KEV, its score changes, its date passes or it stops matching | The open ticket gets one comment and its labels change. It is never closed |
+| The Slack receipt cache is lost and a tracker is enabled | Ticket labels prevent repeat notifications |
+| A destination keeps rate limiting the scan | It gets no more requests that run, and the others continue |
+| Jira rejects a formatted ticket | The ticket is sent again as plain text |
 
 [Architecture index](README.md)

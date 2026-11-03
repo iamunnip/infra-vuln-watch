@@ -15,6 +15,10 @@ repository. Their distributions carry the authoritative license texts and notice
 | PyYAML | MIT | [PyYAML](https://github.com/yaml/pyyaml) |
 | packaging | Apache-2.0 OR BSD-2-Clause | [packaging](https://github.com/pypa/packaging) |
 | pytest (development) | MIT | [pytest](https://github.com/pytest-dev/pytest) |
+| pytest-cov (development) | MIT | [pytest-cov](https://github.com/pytest-dev/pytest-cov) |
+| Ruff (development) | MIT | [Ruff](https://github.com/astral-sh/ruff) |
+| mypy (development) | MIT | [mypy](https://github.com/python/mypy) |
+| types-PyYAML and types-requests (development) | Apache-2.0 | [typeshed](https://github.com/python/typeshed) |
 
 This table describes the direct dependencies at the time of review; it is not an inventory
 of all transitive dependencies or build tools. When distributing a bundle containing installed

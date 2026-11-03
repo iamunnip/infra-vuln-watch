@@ -36,6 +36,8 @@ def inventory(tmp_path, monkeypatch):
 @pytest.fixture
 def github(monkeypatch):
     fake = Mock()
+    fake.open_findings = {}
+    fake.all_findings = {}
     fake.get_reported_ids.return_value = {"tool/CVE-OLD"}
     monkeypatch.setattr(github_client, "GitHubClient", Mock(return_value=fake))
     return fake
@@ -92,6 +94,8 @@ def test_dry_run_opens_nothing_and_needs_no_token(inventory, monkeypatch, capsys
     monkeypatch.setattr("sys.argv", ["main.py", "--inventory", str(inventory), "--dry-run"])
     monkeypatch.delenv("GITHUB_TOKEN")
     client = Mock()
+    client.open_findings = {}
+    client.all_findings = {}
     monkeypatch.setattr(github_client, "GitHubClient", client)
     monkeypatch.setattr(nvd_client, "fetch_cves", lambda item: [make_cve("CVE-NEW", "< 2.0.0")])
 
@@ -153,7 +157,7 @@ def test_epss_is_only_requested_for_new_cves(inventory, github, monkeypatch):
 
 
 def test_config_overrides_reach_issue_body(inventory, github, monkeypatch):
-    settings = inventory / 'settings.yml'
+    settings = inventory / 'settings.conf'
     settings.write_text('fix_days:\n  high: 4\n  unknown: 10\n')
     with (inventory / 'tool.yaml').open('a') as file:
         file.write('config:\n  fix_days:\n    unknown: 3\n')
@@ -167,7 +171,7 @@ def test_config_overrides_reach_issue_body(inventory, github, monkeypatch):
 
 
 def test_invalid_config_fails_before_network(inventory, github, monkeypatch, capsys):
-    settings = inventory / 'settings.yml'
+    settings = inventory / 'settings.conf'
     settings.write_text('fix_days:\n  high: false\n')
     fetch = Mock()
     monkeypatch.setattr(nvd_client, 'fetch_cves', fetch)
@@ -204,7 +208,7 @@ def test_jira_and_slack_without_github_deduplicate_across_runs(inventory, monkey
     from infra_vuln_watch.clients import jira_client, slack_client
     import requests
 
-    settings = inventory / 'settings.yml'
+    settings = inventory / 'settings.conf'
     settings.write_text('''outputs:
   github:
     enabled: false
@@ -223,6 +227,7 @@ notifications:
     monkeypatch.setenv('JIRA_API_TOKEN', 'test-token')
     monkeypatch.setenv('SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/test/space/secret')
     monkeypatch.setattr(jira_client.time, 'sleep', lambda seconds: None)
+    monkeypatch.setattr(jira_client.requests, 'put', lambda *args, **kwargs: Mock(status_code=204, headers={}))
     monkeypatch.setattr(nvd_client, 'fetch_cves', lambda item: [make_cve('CVE-2026-1234', '< 2.0.0')])
     history = []
     posts = []
@@ -323,7 +328,7 @@ deployments:
   - id: staging
     version: "1.0"
 ''')
-    settings = inventory / 'settings.yml'
+    settings = inventory / 'settings.conf'
     settings.write_text('fix_days:\n  unknown: 10\n')
     monkeypatch.setattr(nvd_client, 'fetch_cves', lambda item: [make_cve('CVE-NEW', '< 2.0.0')])
     assert main.main(['--inventory', str(inventory), '--config', str(settings)]) == 0

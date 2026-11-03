@@ -4,6 +4,8 @@ import pytest
 import requests
 
 from infra_vuln_watch.clients import risk_data
+from infra_vuln_watch.configuration.config import DEFAULT_CONFIG
+from infra_vuln_watch.domain import cve_details
 
 
 def reply(data=None, status=200):
@@ -43,7 +45,7 @@ def test_epss_down_returns_none_after_retries(monkeypatch):
     fake_get = Mock(return_value=reply(status=503))
     monkeypatch.setattr(risk_data.requests, "get", fake_get)
     assert risk_data.fetch_epss(["CVE-1"]) is None
-    assert fake_get.call_count == risk_data.MAX_ATTEMPTS
+    assert fake_get.call_count == DEFAULT_CONFIG["sources"]["epss"]["max_attempts"]
 
 
 def test_retry_can_succeed(monkeypatch):
@@ -70,11 +72,11 @@ def test_kev_down_returns_none(monkeypatch):
 
 def test_nvd_copy_is_used_when_the_cisa_list_is_down():
     cve = {"id": "CVE-1", "cisaExploitAdd": "2026-01-02", "cisaActionDue": "2026-01-23"}
-    assert risk_data.find_kev_entry(cve, None)["date_added"] == "2026-01-02"
+    assert cve_details.find_kev_entry(cve, None)["date_added"] == "2026-01-02"
 
 
 def test_not_listed_anywhere():
-    assert risk_data.find_kev_entry({"id": "CVE-1"}, {}) is None
+    assert cve_details.find_kev_entry({"id": "CVE-1"}, {}) is None
 
 
 def test_disabled_sources_make_no_requests(monkeypatch):
@@ -88,4 +90,4 @@ def test_disabled_sources_make_no_requests(monkeypatch):
 
 
 def test_nvd_kev_fallback_can_be_disabled():
-    assert risk_data.find_kev_entry({'id': 'CVE-1', 'cisaExploitAdd': '2026-01-02'}, None, allow_nvd=False) is None
+    assert cve_details.find_kev_entry({'id': 'CVE-1', 'cisaExploitAdd': '2026-01-02'}, None, allow_nvd=False) is None

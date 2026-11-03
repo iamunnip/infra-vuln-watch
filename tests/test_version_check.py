@@ -115,3 +115,90 @@ def test_unbounded_matching_range_prevents_false_fix_guidance():
 def test_malformed_cpe_is_unknown_instead_of_crashing():
     cve = {'configurations': [{'nodes': [{'cpeMatch': [{'vulnerable': True, 'criteria': 'bad'}]}]}]}
     assert status(cve, '1.0') == UNKNOWN
+
+
+def reported_as(vendor, product, description=None):
+    cve = {"affected": [{"affectedData": [{"vendor": vendor, "product": product, "versions": [
+        {"version": "0", "lessThan": "9.0", "status": "affected"}]}]}]}
+    if description:
+        cve["descriptions"] = [{"lang": "en", "value": description}]
+    return cve
+
+
+def test_alias_matches_a_reporter_name_that_differs_from_the_cpe_name():
+    cve = reported_as("Apache Software Foundation", "Apache HTTP Server")
+    alias = {"vendor": "Apache Software Foundation", "product": "Apache HTTP Server"}
+    assert check_version(cve, "apache", "http_server", "2.4.0")["status"] == NOT_AFFECTED
+    assert check_version(cve, "apache", "http_server", "2.4.0", aliases=[alias])["status"] == AFFECTED
+
+
+def test_alias_matches_cpe_names_too():
+    cve = cpe_cve(versionEndExcluding="2.0.0")
+    alias = {"vendor": "openbao", "product": "openbao"}
+    assert check_version(cve, "other", "name", "1.0.0", aliases=[alias])["status"] == AFFECTED
+
+
+def test_unmatched_reporter_name_needs_review_if_the_text_names_the_tool():
+    cve = reported_as("openbao", "github.com/openbao/openbao", "OpenBao leaks a token.")
+    assert check_version(cve, "openbao", "openbao", "2.5.5", keyword="openbao")["status"] == UNKNOWN
+
+
+def test_unmatched_reporter_name_is_not_affected_if_the_text_does_not_name_the_tool():
+    cve = reported_as("other", "other", "A plugin for openbaoish systems leaks a token.")
+    assert check_version(cve, "openbao", "openbao", "2.5.5", keyword="openbao")["status"] == NOT_AFFECTED
+
+
+def test_analyst_data_for_another_product_is_trusted_over_the_text():
+    cve = {"configurations": [{"nodes": [{"cpeMatch": [
+        {"vulnerable": True, "criteria": "cpe:2.3:a:other:plugin:*:*:*:*:*:*:*:*"}]}]}],
+        "descriptions": [{"lang": "en", "value": "A plugin for OpenBao leaks a token."}]}
+    assert check_version(cve, "openbao", "openbao", "2.5.5", keyword="openbao")["status"] == NOT_AFFECTED
+
+
+def test_all_words_of_a_multi_word_keyword_must_appear():
+    cve = reported_as("x", "y", "The HTTP server of Apache leaks a token.")
+    assert check_version(cve, "a", "b", "1.0", keyword="apache http")["status"] == UNKNOWN
+    assert check_version(cve, "a", "b", "1.0", keyword="apache tomcat")["status"] == NOT_AFFECTED
+
+
+def test_stated_unaffected_version_overrides_a_broad_affected_range():
+    cve = affected_cve([
+        {"version": "1.0", "lessThan": "*", "status": "affected"},
+        {"version": "2.5.5", "status": "unaffected"},
+    ])
+    assert check_version(cve, "openbao", "openbao", "2.5.5")["status"] == NOT_AFFECTED
+    assert check_version(cve, "openbao", "openbao", "2.5.4")["status"] == AFFECTED
+
+
+def test_unaffected_branch_with_a_wildcard_end():
+    cve = affected_cve([
+        {"version": "1.0", "lessThan": "*", "status": "affected"},
+        {"version": "2.5.3", "lessThanOrEqual": "2.5.*", "status": "unaffected"},
+    ])
+    assert status(cve, "2.5.2") == AFFECTED
+    assert status(cve, "2.5.9") == NOT_AFFECTED
+    assert status(cve, "2.6.0") == AFFECTED
+
+
+def test_unreadable_unaffected_entry_does_not_clear_a_version():
+    cve = affected_cve([
+        {"version": "1.0", "lessThan": "*", "status": "affected"},
+        {"version": "main", "status": "unaffected"},
+    ])
+    assert status(cve, "2.5.5") == AFFECTED
+
+
+def test_analyst_range_still_applies_when_the_reporter_says_unaffected():
+    cve = {**cpe_cve(versionEndExcluding="3.0.0"),
+           **affected_cve([{"version": "2.5.5", "status": "unaffected"}])}
+    assert status(cve, "2.5.5") == AFFECTED
+
+
+def test_trailing_comma_does_not_widen_a_range():
+    cve = affected_cve([{"version": "< 2.0,", "status": "affected"}])
+    assert status(cve, "1.0") == AFFECTED
+    assert status(cve, "3.0") == NOT_AFFECTED
+
+
+def test_operator_without_a_version_needs_review():
+    assert status(affected_cve([{"version": ">=", "status": "affected"}]), "1.0") == UNKNOWN

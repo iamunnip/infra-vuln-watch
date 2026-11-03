@@ -10,7 +10,7 @@
    A result looks like `cpe:2.3:a:hashicorp:vault:1.15.0:...`. Here the vendor is `hashicorp`
    and the product is `vault`.
 
-2. Create `inventory/vault.yaml`:
+2. Create `inventory/vault.yaml` (`.yml` also works):
 
    ```yaml
    tool:
@@ -35,7 +35,11 @@
    .venv/bin/python -m infra_vuln_watch --dry-run
    ```
 
-4. If the first run would report a lot of CVEs, check that the names and version are right
+4. If `needs-review` findings show that reporters use another name for this tool, add it under
+   [`tool.aliases`](../reference/inventory-format.md#product-fields). You can use it from the start
+   when you already know the name.
+
+5. If the first run would report a lot of CVEs, check that the names and version are right
    before you merge. Each selected finding is sent to the configured destinations.
 
 ## More than one installation

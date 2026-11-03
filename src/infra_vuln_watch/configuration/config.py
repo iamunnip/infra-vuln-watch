@@ -1,18 +1,24 @@
 """Validated global settings and recursively merged per-tool overrides."""
 
 from copy import deepcopy
+import json
 from pathlib import Path
 import re
+from typing import Any
 from urllib.parse import urlsplit
 
 import yaml
 
-DEFAULT_CONFIG = {
+from infra_vuln_watch.domain.ignore_list import expiry_date
+
+DEFAULT_CONFIG: dict[str, Any] = {
     "fix_days": {"critical": 2, "high": 7, "medium": 14, "low": 21,
                  "unknown": None, "known_exploited": 2},
     "scan": {"enabled": True, "dry_run": False, "min_severity": "low",
-             "include_unknown_severity": True, "report_unknown_versions": True, "ignore_cves": []},
+             "include_unknown_severity": True, "report_unknown_versions": True, "ignore_cves": [],
+             "update_existing": True},
     "sources": {
+        # NVD allows 5 requests per 30 seconds, or 50 per 30 seconds with an API key.
         "nvd": {"product_search": True, "keyword_search": True, "timeout": 60,
                 "max_attempts": 5, "retry_wait": 30,
                 "interval_without_key": 6.5, "interval_with_key": 0.7, "api_key_env": "NVD_API_KEY"},
@@ -21,17 +27,40 @@ DEFAULT_CONFIG = {
     },
     "outputs": {
         "github": {"enabled": True, "repository": None, "token_env": "GITHUB_TOKEN",
-                   "api_url": "https://api.github.com", "timeout": 30, "create_wait": 3},
+                   "api_url": "https://api.github.com", "timeout": 30, "create_wait": 3, "max_rate_limit_wait": 120},
         "jira": {"enabled": False, "base_url": "", "project": "", "issue_type": "Task",
                  "email_env": "JIRA_EMAIL", "token_env": "JIRA_API_TOKEN", "timeout": 30,
-                 "create_wait": 1, "fields": {}},
+                 "create_wait": 1, "max_rate_limit_wait": 120, "fields": {}},
     },
     "notifications": {
         "slack": {"enabled": False, "webhook_env": "SLACK_WEBHOOK_URL", "timeout": 30,
-                  "repeat": False, "state_file": ".vuln-watch/slack.json", "send_wait": 1},
+                  "repeat": False, "state_file": ".vuln-watch/slack.json", "send_wait": 1, "max_rate_limit_wait": 120,
+                  "notify_updates": True},
     },
 }
+CVE_ID = re.compile(r"CVE-\d{4}-\d{4,}", re.IGNORECASE)
 SEVERITIES = {"low": 1, "medium": 2, "high": 3, "critical": 4}
+
+
+def validate_ignore_entry(entry, location):
+    """Accept a CVE ID, or a mapping with id and an optional reason and expiry date."""
+    if isinstance(entry, str):
+        cve_id = entry
+    elif isinstance(entry, dict) and 'id' in entry and not entry.keys() - {'id', 'reason', 'expires'}:
+        cve_id = entry['id']
+        reason = entry.get('reason')
+        if reason is not None and (not isinstance(reason, str) or not reason.strip()):
+            raise ValueError(f"{location}: reason must be a non-empty string")
+        if entry.get('expires') is not None:
+            try:
+                expiry_date(entry['expires'])
+            except (TypeError, ValueError):
+                raise ValueError(f"{location}: expires must be a date like 2027-01-31") from None
+    else:
+        raise ValueError(f"{location}: expected a CVE ID, or a mapping with id, reason and expires")
+    # A mistyped ID would otherwise match nothing and hide the mistake.
+    if not isinstance(cve_id, str) or not CVE_ID.fullmatch(cve_id):
+        raise ValueError(f"{location}: expected a CVE ID like CVE-2026-1234")
 
 
 def https_url(value):
@@ -54,7 +83,6 @@ def _validate(value, defaults, path):
             if {'project', 'issuetype', 'summary', 'description', 'labels'} & setting.keys():
                 raise ValueError(f"{location}: cannot replace project, issuetype, summary, description or labels")
             # Only JSON-compatible values may reach the Jira request.
-            import json
             try:
                 json.dumps(setting, allow_nan=False)
             except (TypeError, ValueError) as error:
@@ -85,13 +113,15 @@ def _validate(value, defaults, path):
                 raise ValueError(f"{location}: expected an HTTPS URL without credentials, query or fragment")
             if key == 'project' and setting and not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', setting):
                 raise ValueError(f"{location}: expected a Jira project key")
-        elif isinstance(default, list):
-            if not isinstance(setting, list) or any(not isinstance(v, str) or not v.strip() for v in setting):
-                raise ValueError(f"{location}: expected a list of non-empty strings")
+        elif key == 'ignore_cves':
+            if not isinstance(setting, list):
+                raise ValueError(f"{location}: expected a list")
+            for entry in setting:
+                validate_ignore_entry(entry, location)
         elif isinstance(default, (int, float)):
             minimum = {'interval_without_key': 6.5, 'interval_with_key': 0.7,
                        'retry_wait': 0, 'create_wait': 1 if '.jira.' in location else 3,
-                       'send_wait': 1}.get(key, 1)
+                       'send_wait': 1, 'max_rate_limit_wait': 0}.get(key, 1)
             maximum = {'max_attempts': 10, 'batch_size': 100, 'timeout': 300}.get(key, 3600)
             if (type(setting) not in (int, float) or not minimum <= setting <= maximum
                     or (key in {'max_attempts', 'batch_size'} and type(setting) is not int)):

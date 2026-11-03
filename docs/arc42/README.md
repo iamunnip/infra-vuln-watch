@@ -40,6 +40,6 @@ See [ADR 0017](../adr/0017-use-c4-views-within-arc42.md) and the
 
 When changing external integrations, update section 3 and the container view. When moving
 module responsibilities, update the component view and file table. When changing execution
-order, failure handling or hosting, update sections 6–8 and affected quality scenarios.
+order, failure handling or hosting, update sections 6 to 8 and affected quality scenarios.
 Record significant decisions in `docs/adr/`; keep tutorials and domain explanations in their existing
 homes. Check diagrams against `src/infra_vuln_watch/`, workflows and tests before merging.

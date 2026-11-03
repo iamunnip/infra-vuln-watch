@@ -9,12 +9,6 @@ from infra_vuln_watch.configuration.config import DEFAULT_CONFIG
 
 NVD_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 RESULTS_PER_PAGE = 2000
-MAX_ATTEMPTS = 5
-RETRY_WAIT_SECONDS = 30
-
-# NVD allows 5 requests per 30 seconds, or 50 per 30 seconds with an API key.
-WAIT_WITHOUT_KEY_SECONDS = 6.5
-WAIT_WITH_KEY_SECONDS = 0.7
 
 # NVD uses these when it is busy or rate limiting, so trying again can work.
 RETRY_STATUS_CODES = [403, 429, 500, 502, 503, 504]
@@ -49,7 +43,7 @@ def get_page(params, config=None):
 
 def search(params, config=None):
     """Run one search and return the CVEs from every page of results."""
-    cves = []
+    cves: list[dict] = []
     start_index = 0
 
     while True:

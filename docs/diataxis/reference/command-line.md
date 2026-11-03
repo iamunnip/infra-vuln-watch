@@ -6,9 +6,9 @@ python -m infra_vuln_watch [--dry-run] [--inventory DIRECTORY] [--config PATH]
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--dry-run` | Off | Print findings and open no issues. Needs no GitHub token |
+| `--dry-run` | Off | Print findings, and open, update and notify nothing. Needs no output credentials |
 | `--config` | `config.yaml` if present, otherwise built-in defaults | Global policy file; an explicitly selected file must exist |
-| `--inventory` | `inventory`, in the folder you run from | Directory of YAML files |
+| `--inventory` | `inventory`, in the folder you run from | Directory of `.yaml` and `.yml` files |
 
 ## Environment variables
 
@@ -26,17 +26,30 @@ python -m infra_vuln_watch [--dry-run] [--inventory DIRECTORY] [--config PATH]
 | Code | Meaning |
 | --- | --- |
 | `0` | Every tool was checked. Finding CVEs still counts as success |
-| `1` | Configuration, source retrieval, output setup or delivery failed |
+| `1` | Configuration, source retrieval, output setup, delivery or a ticket update failed, a destination rate limited the scan, or a CVE record was malformed |
 
 
 
 ## Tests
 
+The tests use mocks and cannot reach a network, because `tests/conftest.py` fails any test that tries.
+`tests/test_delivery_mock.py` runs the real CLI and clients against fake GitHub, Jira, Slack, NVD, EPSS
+and CISA KEV services, including failures, rate limits and repeat scans.
+
 Run these from the top folder of the repo.
 
 ```bash
 .venv/bin/pip install -e ".[dev]"
-.venv/bin/python -m pytest
+.venv/bin/ruff check src tests scripts
+.venv/bin/mypy
+.venv/bin/python -m pytest --cov --cov-fail-under=90
+```
+
+After changing a dependency in `pyproject.toml`, regenerate the lockfile that the scan installs. Run
+this with pip-tools installed:
+
+```bash
+pip-compile --generate-hashes --strip-extras --all-build-deps --allow-unsafe --no-emit-index-url --output-file=requirements.txt pyproject.toml
 ```
 
 See [configuration](configuration.md) for global settings and per-tool precedence. Invalid

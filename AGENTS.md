@@ -56,9 +56,14 @@ From the repository root, after installing with `pip install -e ".[dev]"`:
 
 ```bash
 python scripts/check_docs.py
-python -m pytest
+ruff check src tests scripts
+mypy
+python -m pytest --cov --cov-fail-under=90
 ```
 
-With the existing virtual environment, use `.venv/bin/python` in place of `python`.
+With the existing virtual environment, use `.venv/bin/python` in place of `python`, and
+`.venv/bin/ruff` and `.venv/bin/mypy` for the other tools. The scan installs `requirements.txt`, so
+regenerate it when a runtime dependency changes; see the
+[command-line reference](docs/diataxis/reference/command-line.md#tests).
 The documentation check validates local Markdown links and headings plus repository OKF
 metadata conventions. It does not check remote URLs or render Mermaid diagrams.

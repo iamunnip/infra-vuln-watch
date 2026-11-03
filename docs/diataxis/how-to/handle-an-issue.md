@@ -41,13 +41,20 @@ diagrams.
    | Decision | What to do |
    | --- | --- |
    | Fix it | Follow **How to fix it**, then merge a pull request with a `Closes #number` line for each issue it fixes |
-   | Does not apply | Close the issue as "not planned", with the reason in a comment |
+   | Does not apply | Close the issue as "not planned", with the reason in a comment. Add the CVE to `ignore_cves` with a `reason` and `expires` if it should not open for other deployments either |
 
 The tool never reopens a closed issue and never opens a second one for the same finding identity (tool, deployment when present, and CVE),
 even if the score changes later.
 
+Later scans can comment on an open issue and add labels. `overdue` means the fix date has passed.
+`known-exploited` on an older issue means attacks became known after it opened, so handle it first.
+`no-longer-affected` means the inventory version is outside the affected range: check that the upgrade
+is really deployed, then close the issue. See
+[keeping tickets current](../reference/issue-format.md#keeping-tickets-current).
+
 Keep the `vuln-watch` label and the hidden `vuln-watch-id` line in the description. The tool
-uses both to know the CVE is already reported.
+uses both to know the CVE is already reported. It also reads the **Fix by** date from the description
+to add `overdue`.
 
 For a scoped finding, upgrade the installation identified by its deployment ID and update that
 deployment's `version`. A fix in staging does not resolve the production finding.

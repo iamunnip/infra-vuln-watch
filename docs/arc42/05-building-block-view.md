@@ -27,18 +27,22 @@ The package lives in `src/infra_vuln_watch/`, with tests in `tests/`. See
 | `application/scanner.py` | Applies scan filters, enriches findings, routes delivery and returns the exit code |
 | `configuration/config.py` | Validates and recursively merges defaults, global settings and tool overrides |
 | `persistence/state.py` | Atomically persists successful Slack notification receipts |
-| `application/router.py` | Routes each finding independently to configured trackers and Slack |
-| `clients/jira_client.py` | Reads Jira Cloud reporting history and creates tickets using REST v3 |
+| `application/router.py` | Routes each finding independently to configured trackers and Slack, and applies ticket updates |
+| `application/ticket_updates.py` | Decides which labels, comments and title an open ticket needs |
+| `clients/rate_limit.py` | Waits once when an output service asks, then marks it as limited |
+| `domain/ignore_list.py` | Reads ignore entries, with their reasons and expiry dates |
+| `reporting/jira_format.py` | Converts a finding's Markdown into Atlassian Document Format |
+| `clients/jira_client.py` | Reads Jira Cloud reporting history, and creates and updates tickets using REST v3 |
 | `clients/slack_client.py` | Sends plain-text Slack webhook payloads and records delivery |
 | `configuration/inventory.py` | Normalises grouped tool metadata, validates files and expands deployment-specific targets |
-| `domain/identity.py` | Defines stable scan target IDs, finding IDs and scoped display names |
+| `domain/identity.py` | Defines stable scan target IDs, finding IDs, the shared ticket marker and scoped display names |
 | `clients/nvd_client.py` | Downloads CVEs, with paging, waiting and retries |
-| `domain/version_check.py` | Decides affected, not affected or unknown, and finds the fix |
+| `domain/version_check.py` | Decides affected, not affected or unknown using names, aliases and reporter statuses, and finds the fix |
 | `domain/cve_details.py` | Pulls the score, description and links out of a CVE |
-| `clients/risk_data.py` | Downloads EPSS scores and the CISA KEV list |
+| `clients/risk_data.py` | Downloads EPSS scores and the CISA KEV list; `domain/cve_details.py` reads a CVE's KEV entry |
 | `domain/fix_deadline.py` | Works out the fix date from the severity |
 | `reporting/issue_format.py` | Writes the issue title and body, and cleans NVD text |
-| `clients/github_client.py` | Creates labels and issues, and lists what is already reported |
+| `clients/github_client.py` | Creates labels and issues, updates open issues, and lists what is already reported |
 
 [Architecture index](README.md)
 
@@ -51,7 +55,8 @@ src/infra_vuln_watch/
 ├── application/
 │   ├── __init__.py
 │   ├── router.py
-│   └── scanner.py
+│   ├── scanner.py
+│   └── ticket_updates.py
 ├── cli/
 │   ├── __init__.py
 │   └── main.py
@@ -60,6 +65,7 @@ src/infra_vuln_watch/
 │   ├── github_client.py
 │   ├── jira_client.py
 │   ├── nvd_client.py
+│   ├── rate_limit.py
 │   ├── risk_data.py
 │   └── slack_client.py
 ├── configuration/
@@ -71,13 +77,15 @@ src/infra_vuln_watch/
 │   ├── cve_details.py
 │   ├── fix_deadline.py
 │   ├── identity.py
+│   ├── ignore_list.py
 │   └── version_check.py
 ├── persistence/
 │   ├── __init__.py
 │   └── state.py
 └── reporting/
     ├── __init__.py
-    └── issue_format.py
+    ├── issue_format.py
+    └── jira_format.py
 ```
 
 | Package | Responsibility |

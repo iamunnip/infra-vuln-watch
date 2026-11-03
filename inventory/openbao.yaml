@@ -22,6 +22,7 @@ config:
     include_unknown_severity: true
     report_unknown_versions: true
     ignore_cves: []
+    update_existing: true
   sources:
     nvd:
       product_search: true
@@ -50,6 +51,7 @@ config:
       webhook_env: SLACK_WEBHOOK_URL
       repeat: false
       state_file: .vuln-watch/slack.json
+      notify_updates: true
 
 # Installations to scan independently, each with a stable id, environment, version and ownership.
 # Deployment config overrides tool settings; {} inherits them. Keep ids stable across upgrades.

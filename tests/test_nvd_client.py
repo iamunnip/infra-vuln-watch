@@ -4,6 +4,7 @@ import pytest
 import requests
 
 from infra_vuln_watch.clients import nvd_client
+from infra_vuln_watch.configuration.config import DEFAULT_CONFIG
 
 ITEM = {"vendor": "openbao", "product": "openbao", "keyword": "openbao"}
 
@@ -54,7 +55,7 @@ def test_gives_up_with_an_error_instead_of_returning_nothing(monkeypatch):
 
     with pytest.raises(requests.RequestException):
         nvd_client.search({"keywordSearch": "x"})
-    assert fake_get.call_count == nvd_client.MAX_ATTEMPTS
+    assert fake_get.call_count == DEFAULT_CONFIG["sources"]["nvd"]["max_attempts"]
 
 
 def test_bad_request_is_not_retried(monkeypatch):
