@@ -12,6 +12,26 @@ from infra_vuln_watch.domain.identity import inventory_id
 PRODUCT_FIELDS = ['name', 'repo', 'vendor', 'product']
 TARGET_FIELDS = ['version', 'team', 'owner']
 DEPLOYMENT_FIELDS = {'id', 'environment', 'version', 'team', 'owner', 'config'}
+TOOL_FIELDS = set(PRODUCT_FIELDS) | {'display_name', 'keyword', 'team', 'owner'}
+
+
+def normalise_document(document, source):
+    """Flatten grouped tool metadata internally while accepting legacy flat files."""
+    if 'tool' not in document:
+        return document
+    metadata = document['tool']
+    if not isinstance(metadata, dict):
+        raise ValueError(f'{source}: tool must be a mapping')
+    mixed = TOOL_FIELDS & document.keys()
+    if mixed:
+        raise ValueError(f'{source}: keep product metadata inside tool; do not mix grouped and flat fields')
+    unknown_tool = metadata.keys() - TOOL_FIELDS
+    if unknown_tool:
+        raise ValueError(f'{source}: unknown tool fields: {", ".join(map(str, unknown_tool))}')
+    unknown_root = document.keys() - {'tool', 'config', 'deployments', 'version'}
+    if unknown_root:
+        raise ValueError(f'{source}: unknown inventory sections: {", ".join(map(str, unknown_root))}')
+    return {**metadata, **{key: value for key, value in document.items() if key != 'tool'}}
 
 
 def require_strings(item, fields, source):
@@ -79,6 +99,7 @@ def load_item(path):
         raise ValueError(f'{path}: could not read inventory: {error}') from error
     if not isinstance(item, dict):
         raise ValueError(f"{path}: expected a list of fields like 'name: openbao'")
+    item = normalise_document(item, path)
     require_strings(item, PRODUCT_FIELDS, path)
     if any(character.isspace() for character in item['name']):
         raise ValueError(f'{path}: name cannot contain spaces, use a dash instead')

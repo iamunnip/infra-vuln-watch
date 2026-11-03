@@ -34,7 +34,8 @@ class SlackClient:
     def send(self, marker, title, links):
         text = '\n'.join([title, *links, 'This product uses the NVD API but is not endorsed or certified by the NVD.'])
         # Plain-text blocks prevent untrusted CVE text from becoming Slack mentions or markup.
-        payload = {'text': 'Vulnerability finding from infra-vuln-watch', 'blocks': [
+        fallback = title.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        payload = {'text': fallback, 'mrkdwn': False, 'blocks': [
             {'type': 'section', 'text': {'type': 'plain_text', 'text': text[:3000], 'emoji': False}}
         ], 'unfurl_links': False, 'unfurl_media': False}
         time.sleep(self.config['send_wait'])

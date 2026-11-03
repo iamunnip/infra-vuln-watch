@@ -88,7 +88,7 @@ Only `unknown` accepts `null`, meaning no deadline for an unscored CVE.
 
 ## Per-tool override
 
-Add this mapping alongside the product fields in a tool's inventory file:
+Add this mapping as a sibling of `tool` and `deployments` in the inventory file:
 
 ```yaml
 config:
@@ -155,8 +155,8 @@ still be structurally complete for an enabled Jira destination, including in dry
   Markdown styling is not converted into Jira rich text. `create_wait` is at least 1 second.
 - **Slack:** set `enabled: true` and provide an incoming webhook in the variable named by
   `webhook_env`. It must be a Slack HTTPS incoming webhook URL, including GovSlack if used.
-  The webhook determines the channel. Messages use plain-text blocks to prevent CVE text
-  from triggering Slack mentions. `send_wait` is at least 1 second.
+  The webhook determines the channel. Messages use plain-text blocks and an escaped title as notification fallback text to prevent
+  CVE text from triggering Slack mentions. `send_wait` is at least 1 second.
 
 Score 0.0 exclusion, search endpoint URLs, identity markers and required tracker labels are implementation
 invariants rather than configurable values. The inventory path and selected config path remain

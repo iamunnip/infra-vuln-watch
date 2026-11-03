@@ -46,3 +46,16 @@ must be evaluated for each installation. Keep a deployment ID stable when changi
 or owner. Legacy unscoped findings cannot be automatically assigned to environments; review
 and reconcile them when migrating inventory. A CVE affecting two deployments can legitimately
 produce two remediation tickets in the same tracker.
+
+# Heading visibility
+
+Put severity and environment before the score and CVE in compact finding headings so operators
+can see urgency and scope early. Include the stable deployment ID when it differs from the
+environment name, preserving distinctions between installations sharing one environment.
+Brackets separate fields visually; they do not create severity badges or set tracker priority.
+Use native labels and explicit tracker fields for filtering. Keep the full explanation,
+installed version, owner and fix date in the finding details.
+
+The project shares the title across GitHub, Jira Cloud and Slack. Slack uses plain-text blocks
+and an escaped title for notification fallback text. Presentation changes do not change finding
+identities, migrate earlier tickets or automatically rename them.

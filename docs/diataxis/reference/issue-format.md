@@ -3,18 +3,38 @@
 ## Title
 
 ```text
-[SEVERITY] [score] [CVE id] Tool - summary
+[SEVERITY] [ENVIRONMENT/deployment] [score] CVE-id Tool - summary
 ```
 
 | Part | Example | Values |
 | --- | --- | --- |
 | SEVERITY | `HIGH` | `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`, `UNKNOWN` |
+| ENVIRONMENT/deployment | `STAGE/stage-eu` | Uppercase environment, plus deployment ID when distinct; omitted for single-version records |
 | score | `7.5` | CVSS base score from 0.0 to 10.0, or `n/a` |
 | CVE id | `CVE-2026-115365` | The id from NVD |
 | Tool | `OpenBao` | `display_name`, with environment/deployment scope when configured |
 | summary | | Up to 120 characters from the CVE description |
 
-[ADR 0009](../../adr/0009-issue-title-and-labels.md) explains this format.
+[ADR 0023](../../adr/0023-prioritise-environment-in-finding-titles.md) records the current title
+format. [ADR 0009](../../adr/0009-issue-title-and-labels.md) records the original label conventions.
+
+```text
+[HIGH] [STAGE] [7.1] CVE-2026-12345 OpenBao - short vulnerability summary
+[HIGH] [STAGE/stage-eu] [7.1] CVE-2026-12345 OpenBao - short vulnerability summary
+```
+
+Severity and environment come first for compact lists. The CVE ID has no brackets. The product
+name appears once, without a trailing environment suffix. Missing scores appear as `[n/a]`.
+The summary is capped at 120 characters; output clients apply their title-length limits.
+
+| Destination | Presentation |
+| --- | --- |
+| GitHub | Plain issue title, with separate severity and deployment labels |
+| Jira Cloud | Plain ticket summary, with separate labels; Jira priority can be configured through additional create fields |
+| Slack | Plain-text message block plus an escaped title in notification fallback text; Markdown is disabled for fallback text |
+
+Square brackets are visual separators, not special markup or coloured badges. The same shared
+title is used across destinations. Existing issues and tickets are not renamed by later scans.
 
 ## Description sections
 
@@ -123,8 +143,8 @@ See [delivery setup](../how-to/configure-delivery.md).
 
 ## Deployment scope
 
-For a deployment, a title includes `OpenBao [production/prod-eu]` (or `OpenBao [production]`
-when the environment and ID are identical). The details identify deployment, environment,
+For a deployment, the prefix includes `[PRODUCTION/prod-eu]` (or `[PRODUCTION]`
+when environment and ID match, ignoring case). The details identify deployment, environment,
 installed version, team and owner. Fix steps name the exact deployment version to update.
 The identity marker is `tool/deployment-id/CVE`, and tickets receive a `deployment-ID` label.
-Single-version records keep their original title and `tool/CVE` marker.
+Single-version records omit the environment prefix and retain their `tool/CVE` identity marker.

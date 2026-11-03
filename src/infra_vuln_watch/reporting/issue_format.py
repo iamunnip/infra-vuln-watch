@@ -55,11 +55,20 @@ def issue_marker(item, cve):
 
 
 def make_title(item, cve):
-    """Return a title like: [LOW] [2.1] [CVE-2026-1234] OpenBao - what went wrong"""
+    """Return [severity] [environment/deployment] [score] CVE Tool - summary."""
     score = cve_details.get_score(cve)
     description = cve_details.get_description(cve)
     summary = clean_text(cve_details.get_summary(description, item["name"]))
-    return f"[{score['severity'].upper()}] [{score['score']}] [{cve['id']}] {clean_text(target_name(item))} - {summary}"
+    parts = [f"[{score['severity'].upper()}]"]
+    if item.get('deployment_id'):
+        environment = item['environment']
+        deployment = item['deployment_id']
+        scope = environment.upper()
+        if environment.casefold() != deployment.casefold():
+            scope += f'/{deployment}'
+        parts.append(f'[{clean_text(scope)}]')
+    parts.extend([f"[{score['score']}]", cve['id'], clean_text(item['display_name'])])
+    return f"{' '.join(parts)} - {summary}"
 
 
 def describe_deadline(deadline):

@@ -129,3 +129,16 @@ def test_deployments_share_product_but_have_independent_routes(clients):
     assert output.report(stage, CVE, RESULT, RISK)
     jira.create_issue.assert_called_once()
     assert 'tool/staging/CVE-2026-1234' in jira.create_issue.call_args.args[1]
+
+
+def test_shared_title_format_is_used_for_github_jira_and_slack(clients, tmp_path):
+    github, jira, slack = clients
+    config = both()
+    config['notifications'] = {'slack': {'enabled': True, 'state_file': str(tmp_path / 'state.json')}}
+    target = {**item(overrides=config), 'environment': 'stage', 'deployment_id': 'stage-eu'}
+    output = router.OutputRouter([target])
+    assert output.report(target, CVE, RESULT, RISK)
+    title = github.create_issue.call_args.args[0]
+    assert title.startswith('[UNKNOWN] [STAGE/stage-eu] [n/a] CVE-2026-1234 tool -')
+    assert jira.create_issue.call_args.args[0] == title
+    assert slack.send.call_args.args[1] == title

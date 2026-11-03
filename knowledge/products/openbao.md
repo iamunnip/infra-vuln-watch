@@ -12,7 +12,11 @@ sources:
 
 # NVD names
 
-Vendor `openbao`, product `openbao`. Tracked in [inventory/openbao.yaml](../../inventory/openbao.yaml).
+Vendor `openbao`, product `openbao`, recorded under the inventory's `tool` mapping. Tracked in [inventory/openbao.yaml](../../inventory/openbao.yaml).
+
+`tool.repo: openbao/openbao` identifies the upstream GitHub project for release links. It does
+not select where findings are delivered; that is controlled by `config.outputs`. GitHub is
+the currently supported upstream repository host.
 
 The inventory's optional `config` mapping controls how this scanner handles OpenBao findings;
 it does not configure the running OpenBao service. The demo file includes the full tool configuration and multiple deployment records. Each

@@ -13,7 +13,8 @@
   Invalid policy fails before networking. Credentials remain in environment variables.
 - **Failure handling:** a failed tool or destination does not stop the others, but fails the
   run. Output errors omit credentials and webhook URLs. Source enrichment outages are warnings.
-- **Notification safety:** Slack payloads use plain-text blocks; Jira descriptions use plain
+- **Notification safety:** Slack payloads use plain-text blocks and an escaped title as fallback
+  text with Markdown disabled; Jira descriptions use plain
   ADF text. Neither is built from mentions or executable markup. Secrets are referenced only
   by environment variable name in configuration.
 
@@ -22,3 +23,7 @@
 - **Deployment identity:** `tool/deployment-id/CVE` scopes markers and receipts independently of
   installed version. Single-version records retain `tool/CVE`. Use shared identity helpers in
   routing and presentation. Product metadata and NVD keyword remain shared across deployments.
+
+- **Heading visibility:** a shared formatter puts severity, uppercase environment/deployment,
+  score and unbracketed CVE ID before the tool and summary. Labels remain separate. Rendering
+  changes do not alter identity markers or modify existing tickets.

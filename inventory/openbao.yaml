@@ -1,17 +1,12 @@
-# Demonstration inventory, not a record of real production or staging systems.
-# Versions are illustrative, not recommendations of secure OpenBao releases.
-# See docs/diataxis/reference/inventory-format.md.
-name: openbao
-display_name: OpenBao
-repo: openbao/openbao
-team: sre
-owner: iamunnip
-vendor: openbao
-product: openbao
+# Shared product identity: inventory name, upstream GitHub repository and NVD lookup names.
+tool:
+  name: openbao
+  repo: openbao/openbao
+  vendor: openbao
+  product: openbao
 
-# Complete tool configuration, matching the settings in config.yaml.
-# These explicit values override global settings. Remove a value to inherit it.
-# Credentials remain in environment variables, never in this file.
+# Tool-wide settings override config.yaml; remove a value to inherit the global setting.
+# Credentials stay in environment variables; configure only their variable names here.
 config:
   fix_days:
     critical: 2
@@ -56,10 +51,9 @@ config:
       repeat: false
       state_file: .vuln-watch/slack.json
 
-# Deployment-scoped findings use new identities; legacy tickets are not migrated.
-# Each stable deployment id has its own installed version and reporting history.
-# Team and owner below can differ; omitted values inherit the tool defaults above.
-# Each deployment's config can override any tool or global configuration setting.
+# Installations to scan independently, each with a stable id, environment, version and ownership.
+# Deployment config overrides tool settings; {} inherits them. Keep ids stable across upgrades.
+# These are demo records. Legacy unscoped tickets are not automatically migrated.
 deployments:
   - id: production
     environment: production

@@ -1,6 +1,9 @@
 # Directory Update Log
 
 ## 2026-11-03
+* **Update**: Added severity-first and environment-first heading guidance and Slack fallback visibility to [finding delivery](/policies/finding-delivery.md).
+* **Update**: Clarified the upstream GitHub repository versus finding destinations in [OpenBao inventory notes](/products/openbao.md).
+* **Update**: Noted grouped product identifiers in the [OpenBao inventory](/products/openbao.md); matching identifiers and deployment identities are unchanged.
 * **Update**: Documented multi-deployment [OpenBao inventory](/products/openbao.md), distinct versions and ownership, and explicit tool configuration.
 * **Update**: Added deployment scope to [finding delivery](/policies/finding-delivery.md) and [remediation](/policies/vulnerability-fix-process.md).
 * **Update**: Clarified in-memory search reuse for deployments in the [NVD CVE API](/vulnerability-data/nvd-cve-api.md).

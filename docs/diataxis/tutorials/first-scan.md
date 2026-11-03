@@ -44,7 +44,7 @@ retrieved records, while matching each version separately. You will see lines li
 ```text
 Checking openbao/production 2.5.5
   Found 16 CVE(s) to report
-  [dry run; github] [HIGH] [7.5] [CVE-2026-115365] OpenBao [production] - OpenBao from 2.3.0 before 2.6.3 contains...
+  [dry run; github] [HIGH] [PRODUCTION] [7.5] CVE-2026-115365 openbao - OpenBao from 2.3.0 before 2.6.3 contains...
 ```
 
 The count on your screen may differ, because new CVEs are published all the time.
