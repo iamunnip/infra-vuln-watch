@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 
 import requests
 
+from infra_vuln_watch.clients.rate_limit import RateLimited, send as send_with_limit
 from infra_vuln_watch.persistence.state import DeliveryState
 
 
@@ -40,10 +41,14 @@ class SlackClient:
         ], 'unfurl_links': False, 'unfurl_media': False}
         time.sleep(self.config['send_wait'])
         try:
-            response = requests.post(self.webhook, json=payload, timeout=self.config['timeout'], allow_redirects=False)
+            response = send_with_limit(lambda: requests.post(
+                self.webhook, json=payload, timeout=self.config['timeout'], allow_redirects=False,
+            ), self.config['max_rate_limit_wait'])
             response.raise_for_status()
             if response.status_code != 200 or response.text.strip() != 'ok':
                 raise requests.RequestException('Slack rejected the notification')
+        except RateLimited:
+            raise RateLimited('Slack is rate limiting notifications') from None
         except requests.RequestException:
             # requests errors contain the secret URL; never propagate them to CLI output.
             raise requests.RequestException('Slack delivery failed; check webhook, permissions and rate limits') from None

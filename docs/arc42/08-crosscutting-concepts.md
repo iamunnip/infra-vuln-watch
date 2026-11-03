@@ -7,7 +7,8 @@
   cache in the supplied workflow; cache loss can allow repeats.
 - **Least privilege:** the workflow token can only read code and write issues. Actions are
   pinned to commit SHAs.
-- **Human remediation:** people upgrade tools and close issues, and the scan never does either.
+- **Human remediation:** people upgrade tools and close issues, and the scan never does either. It
+  only adds comments and labels to open tickets and updates their titles when facts change.
   The inventory only changes through a pull request, so each fix leaves a record.
 - **Configuration:** defaults < global YAML < tool overrides < deployment overrides, merged recursively; lists replace.
   Invalid policy fails before networking. Credentials remain in environment variables.
@@ -15,8 +16,8 @@
   others, but fails the run. Output errors omit credentials and webhook URLs. Source enrichment
   outages are warnings.
 - **Notification safety:** Slack payloads use plain-text blocks and an escaped title as fallback
-  text with Markdown disabled; Jira descriptions use plain
-  ADF text. Neither is built from mentions or executable markup. Secrets are referenced only
+  text with Markdown disabled; Jira descriptions use ADF panels, tables, lists and text marks,
+  with plain text as a fallback. Neither is built from mentions, media or executable markup. Secrets are referenced only
   by environment variable name in configuration.
 
 [Architecture index](README.md)

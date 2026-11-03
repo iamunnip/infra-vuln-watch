@@ -1,6 +1,8 @@
 # Directory Update Log
 
 ## 2026-11-03
+* **Update**: Added ticket updates, temporary exceptions, backing off and Jira formatting to [finding delivery](/policies/finding-delivery.md).
+* **Update**: Noted that missed deadlines are shown on tickets in [fix windows](/policies/fix-windows.md).
 * **Update**: Severity filters no longer suppress known exploited CVEs in [finding delivery](/policies/finding-delivery.md).
 * **Update**: Documented free-text reporter names and `unaffected` entries inside ranges in [NVD record shapes](/vulnerability-data/nvd-record-shapes.md).
 * **Update**: Documented the production-to-PROD heading alias without identity changes in [finding delivery](/policies/finding-delivery.md).

@@ -4,12 +4,16 @@ import time
 
 import requests
 
+from infra_vuln_watch.clients.rate_limit import send
 from infra_vuln_watch.configuration.config import DEFAULT_CONFIG
+from infra_vuln_watch.domain.fix_deadline import read_fix_date
 from infra_vuln_watch.domain.identity import MARKER_PATTERN
 
 MAIN_LABEL = "vuln-watch"
 REVIEW_LABEL = "needs-review"
 KNOWN_EXPLOITED_LABEL = "known-exploited"
+OVERDUE_LABEL = "overdue"
+RESOLVED_LABEL = "no-longer-affected"
 TOOL_LABEL_COLOR = "1d76db"
 SEVERITY_LABELS = {
     "critical": "b60205",
@@ -41,19 +45,22 @@ class GitHubClient:
             "Accept": "application/vnd.github+json",
         }
         self.reported_links = {}
+        self.open_findings = {}
+
+    def request(self, method, path, **kwargs):
+        """Send one request, waiting once if GitHub asks, and raise on any failure."""
+        response = send(lambda: getattr(requests, method.lower())(
+            f"{self.repo_url}/{path}", headers=self.headers, timeout=self.config["timeout"], **kwargs,
+        ), self.config["max_rate_limit_wait"])
+        response.raise_for_status()
+        return response
 
     def get_all_pages(self, path, params):
         """Download every page of a GitHub list."""
         results = []
         page = 1
         while True:
-            response = requests.get(
-                f"{self.repo_url}/{path}",
-                headers=self.headers,
-                params={**params, "per_page": 100, "page": page},
-                timeout=self.config["timeout"],
-            )
-            response.raise_for_status()
+            response = self.request("GET", path, params={**params, "per_page": 100, "page": page})
             page_results = response.json()
             if not isinstance(page_results, list) or any(not isinstance(row, dict) for row in page_results):
                 raise requests.RequestException("GitHub returned an invalid list response")
@@ -67,7 +74,8 @@ class GitHubClient:
         # GitHub label names ignore case, so "Prod" and "prod" are the same label.
         existing = {label["name"].casefold() for label in self.get_all_pages("labels", {})}
 
-        wanted = {MAIN_LABEL: "5319e7", REVIEW_LABEL: "e99695", KNOWN_EXPLOITED_LABEL: "b60205"}
+        wanted = {MAIN_LABEL: "5319e7", REVIEW_LABEL: "e99695", KNOWN_EXPLOITED_LABEL: "b60205",
+                  OVERDUE_LABEL: "d93f0b", RESOLVED_LABEL: "0e8a16"}
         for severity, color in SEVERITY_LABELS.items():
             wanted[severity_label(severity)] = color
         for name in tool_names:
@@ -77,13 +85,7 @@ class GitHubClient:
 
         for name, color in wanted.items():
             if name.casefold() not in existing:
-                response = requests.post(
-                    f"{self.repo_url}/labels",
-                    headers=self.headers,
-                    json={"name": name, "color": color},
-                    timeout=self.config["timeout"],
-                )
-                response.raise_for_status()
+                self.request("POST", "labels", json={"name": name, "color": color})
                 existing.add(name.casefold())
 
     def get_reported_ids(self):
@@ -100,16 +102,30 @@ class GitHubClient:
                 reported.add(marker)
                 if issue.get("html_url"):
                     self.reported_links[marker] = issue["html_url"]
+                if issue.get("state") == "open" and "number" in issue:
+                    self.open_findings[marker] = {
+                        "ref": issue["number"],
+                        "title": issue.get("title") or "",
+                        "labels": [label["name"] for label in issue.get("labels", [])],
+                        "fix_by": read_fix_date(issue.get("body") or ""),
+                    }
         return reported
 
     def create_issue(self, title, body, labels):
         """Open one issue and return its web address."""
         time.sleep(self.config["create_wait"])
-        response = requests.post(
-            f"{self.repo_url}/issues",
-            headers=self.headers,
-            json={"title": title[:256], "body": body, "labels": labels},
-            timeout=self.config["timeout"],
-        )
-        response.raise_for_status()
+        response = self.request("POST", "issues", json={"title": title[:256], "body": body, "labels": labels})
         return response.json()["html_url"]
+
+    def update_ticket(self, record, add_labels=(), remove_labels=(), title=None, comment=None):
+        """Apply a planned update. The comment goes first, because the labels stop it repeating."""
+        path = f"issues/{record['ref']}"
+        time.sleep(self.config["create_wait"])
+        if comment:
+            self.request("POST", f"{path}/comments", json={"body": comment})
+        if add_labels:
+            self.request("POST", f"{path}/labels", json={"labels": list(add_labels)})
+        for label in remove_labels:
+            self.request("DELETE", f"{path}/labels/{label}")
+        if title:
+            self.request("PATCH", path, json={"title": title[:256]})

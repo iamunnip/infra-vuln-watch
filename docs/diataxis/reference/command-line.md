@@ -32,6 +32,10 @@ python -m infra_vuln_watch [--dry-run] [--inventory DIRECTORY] [--config PATH]
 
 ## Tests
 
+The tests use mocks and cannot reach a network, because `tests/conftest.py` fails any test that tries.
+`tests/test_delivery_mock.py` runs the real CLI and clients against fake GitHub, Jira, Slack, NVD, EPSS
+and CISA KEV services, including failures, rate limits and repeat scans.
+
 Run these from the top folder of the repo.
 
 ```bash

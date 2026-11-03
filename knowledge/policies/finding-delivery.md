@@ -40,6 +40,26 @@ therefore describes the configured search and filtering policy, not an assurance
 See the [configuration reference](../../docs/diataxis/reference/configuration.md) for this
 project's settings and [delivery setup](../../docs/diataxis/how-to/configure-delivery.md) for use.
 
+# Keeping tickets current
+
+A ticket records what was known when it opened, and those facts change: a CVE can join the KEV list, a
+score can be revised, a fix date can pass and an upgrade can remove the exposure. Update the open ticket
+when that happens, and record each change where people will see it. Do not close a ticket automatically.
+A matching inventory version does not prove that deployed software was upgraded, so a person confirms.
+Only an explicit not affected result suggests closure. A CVE that was filtered out or missing from
+search results says nothing about whether it was fixed.
+
+# Temporary exceptions
+
+Suppressing a finding is a decision that should record its reason and end on a date, so a choice made
+for one situation does not silently outlast it.
+
+# Backing off
+
+When a service asks a sender to slow down, the request was not carried out. Wait as asked and retry once,
+then stop sending to that service for the run instead of adding to its load. Other destinations carry on,
+and the work stays pending for the next run.
+
 # Scope of remediation
 
 Fixing staging does not fix production. Version matching, ownership and remediation deadlines
@@ -57,9 +77,11 @@ Brackets separate fields visually; they do not create severity badges or set tra
 Use native labels and explicit tracker fields for filtering. Keep the full explanation,
 installed version, owner and fix date in the finding details.
 
-The project shares the title across GitHub, Jira Cloud and Slack. Slack uses plain-text blocks
+Jira descriptions are rich documents, not GitHub Markdown, so a shared body must be converted for them.
+Convert only known structures, build no mentions or media from untrusted text, and keep a plain text
+fallback. The project shares the title across GitHub, Jira Cloud and Slack. Slack uses plain-text blocks
 and an escaped title for notification fallback text. Presentation changes do not change finding
-identities, migrate earlier tickets or automatically rename them.
+identities or migrate earlier tickets, and only a changed score renames an open ticket.
 
 For heading display, this project abbreviates `production` as `PROD`, ignoring case. This does
 not rename the deployment or stored environment. Inventory values, detail tables, ticket labels

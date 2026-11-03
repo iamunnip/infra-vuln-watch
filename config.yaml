@@ -15,7 +15,10 @@ scan:
   min_severity: low
   include_unknown_severity: true
   report_unknown_versions: true
+  # Each entry is a CVE ID, or a mapping with id, reason and expires.
   ignore_cves: []
+  # Add labels and comments to open tickets when their facts change.
+  update_existing: true
 
 sources:
   nvd:

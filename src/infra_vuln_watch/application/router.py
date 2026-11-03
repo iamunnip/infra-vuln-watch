@@ -7,11 +7,14 @@ from typing import Any
 
 import requests
 
+from infra_vuln_watch.application.ticket_updates import plan_update
 from infra_vuln_watch.clients import github_client, jira_client, slack_client
+from infra_vuln_watch.clients.rate_limit import RateLimited
 from infra_vuln_watch.domain import cve_details
 from infra_vuln_watch.reporting import issue_format
 from infra_vuln_watch.persistence.state import DeliveryState
-from infra_vuln_watch.domain.version_check import UNKNOWN
+from infra_vuln_watch.domain import ignore_list
+from infra_vuln_watch.domain.version_check import UNKNOWN, check_version
 from infra_vuln_watch.domain.identity import finding_id, inventory_id
 
 
@@ -25,6 +28,8 @@ def required_env(name):
 class OutputRouter:
     def __init__(self, items, dry_run=False):
         self.routes = {}
+        # Destinations that are still rate limiting us get no more requests this run.
+        self.limited = set()
         trackers: dict[tuple[str, str], dict] = {}
         slacks = {}
         states = {}
@@ -111,6 +116,10 @@ class OutputRouter:
         links = [f"https://nvd.nist.gov/vuln/detail/{cve['id']}"]
         success = True
         for tracker in route['trackers']:
+            if id(tracker) in self.limited and marker not in tracker['reported']:
+                print(f"  SKIPPED: {tracker['kind']} is rate limited, so {cve['id']} waits for the next scan")
+                success = False
+                continue
             if marker in tracker['reported']:
                 # A retried Slack notification should still point at the existing ticket.
                 existing = tracker['client'].reported_links.get(marker)
@@ -122,15 +131,74 @@ class OutputRouter:
                 tracker['reported'].add(marker)
                 links.append(url)
                 print(f"  Opened {tracker['kind']}: {url}")
+            except RateLimited:
+                self.limited.add(id(tracker))
+                print(f"  FAILED: {tracker['kind']} is rate limiting us, so no more will be sent this run")
+                success = False
             except (requests.RequestException, KeyError, TypeError, ValueError):
                 print(f"  FAILED: {tracker['kind']} delivery for {cve['id']}")
                 success = False
         slack = route['slack']
-        if slack is not None and slack.needs_delivery(marker):
+        if slack is not None and id(slack) in self.limited and slack.needs_delivery(marker):
+            print(f"  SKIPPED: Slack is rate limited, so {cve['id']} waits for the next scan")
+            success = False
+        elif slack is not None and slack.needs_delivery(marker):
             try:
                 slack.send(marker, title, links)
                 print(f"  Sent Slack notification for {cve['id']}")
+            except RateLimited:
+                self.limited.add(id(slack))
+                print('  FAILED: Slack is rate limiting us, so no more will be sent this run')
+                success = False
             except (requests.RequestException, OSError):
                 print(f"  FAILED: Slack delivery or receipt persistence for {cve['id']}")
                 success = False
         return success
+
+    def update_existing(self, item, candidates, kev, today):
+        """Bring this target's open tickets up to date, and return False if any update failed."""
+        route = self.routes[inventory_id(item)]
+        if route['preview'] or not item['config']['scan']['update_existing']:
+            return True
+        success = True
+        by_id = {cve['id']: cve for cve in candidates}
+        for tracker in route['trackers']:
+            for marker, record in tracker['client'].open_findings.items():
+                scope, _, cve_id = marker.rpartition('/')
+                if scope != inventory_id(item) or ignore_list.is_ignored(cve_id, item['config']['scan']['ignore_cves'], today):
+                    continue
+                plan = self.plan_for(item, record, by_id.get(cve_id), kev, today)
+                if plan is None:
+                    continue
+                if id(tracker) in self.limited:
+                    print(f"  SKIPPED: {tracker['kind']} is rate limited, so {cve_id} is not updated")
+                    success = False
+                    continue
+                try:
+                    tracker['client'].update_ticket(record, **plan)
+                    print(f"  Updated {tracker['kind']} ticket for {cve_id}")
+                except RateLimited:
+                    self.limited.add(id(tracker))
+                    print(f"  FAILED: {tracker['kind']} is rate limiting us, so no more will be sent this run")
+                    success = False
+                except (requests.RequestException, KeyError, TypeError, ValueError):
+                    print(f"  FAILED: {tracker['kind']} update for {cve_id}")
+                    success = False
+        return success
+
+    @staticmethod
+    def plan_for(item, record, cve, kev, today):
+        """Plan a ticket update. A CVE that is missing, rejected or unreadable only has its date checked."""
+        if cve is not None and cve.get('vulnStatus') != 'Rejected':
+            try:
+                result = check_version(cve, item['vendor'], item['product'], item['version'],
+                                       aliases=item.get('aliases', ()), keyword=item.get('keyword'))
+                return plan_update(
+                    record, today, item['version'], score=cve_details.get_score(cve), status=result['status'],
+                    known_exploited=bool(cve_details.find_kev_entry(
+                        cve, kev, allow_nvd=item['config']['sources']['kev']['nvd_fallback'])),
+                    new_title=issue_format.make_title(item, cve),
+                )
+            except (AttributeError, KeyError, TypeError, ValueError):
+                pass
+        return plan_update(record, today, item['version'])

@@ -43,6 +43,9 @@ sequenceDiagram
                 end
             end
         end
+        opt Normal delivery and update_existing on
+            M->>T: Comment on and relabel this target's open tickets whose facts changed
+        end
     end
     M-->>A: Exit 1 on source, setup or delivery failure; otherwise 0
 ```
@@ -50,7 +53,9 @@ sequenceDiagram
 Invalid configuration or inventory, missing required credentials, corrupt Slack state or an
 unreadable tracker history fails before CVE scanning. During scanning, source failures and
 invalid CVE data fail that tool but later tools are still checked. Failed deliveries do not
-prevent attempts to other destinations or findings; any failure makes the final exit code 1.
+prevent attempts to other destinations or findings; any failure makes the final exit code 1. A malformed
+CVE record fails only itself, so other findings for that tool are still delivered. A destination that keeps
+rate limiting the scanner gets no more requests during the run, and the others continue.
 
 KEV is cached per distinct source configuration. EPSS and KEV outages are warnings and do not
 prevent delivery. Disabled sources are identified separately in finding details. Optional

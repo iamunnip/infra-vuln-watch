@@ -22,6 +22,7 @@ config:
     include_unknown_severity: true
     report_unknown_versions: true
     ignore_cves: []
+    update_existing: true
   sources:
     nvd:
       product_search: true

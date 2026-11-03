@@ -36,6 +36,7 @@ def inventory(tmp_path, monkeypatch):
 @pytest.fixture
 def github(monkeypatch):
     fake = Mock()
+    fake.open_findings = {}
     fake.get_reported_ids.return_value = {"tool/CVE-OLD"}
     monkeypatch.setattr(github_client, "GitHubClient", Mock(return_value=fake))
     return fake
@@ -92,6 +93,7 @@ def test_dry_run_opens_nothing_and_needs_no_token(inventory, monkeypatch, capsys
     monkeypatch.setattr("sys.argv", ["main.py", "--inventory", str(inventory), "--dry-run"])
     monkeypatch.delenv("GITHUB_TOKEN")
     client = Mock()
+    client.open_findings = {}
     monkeypatch.setattr(github_client, "GitHubClient", client)
     monkeypatch.setattr(nvd_client, "fetch_cves", lambda item: [make_cve("CVE-NEW", "< 2.0.0")])
 

@@ -1,12 +1,13 @@
 """Scan orchestration independent of argument parsing and output destinations."""
 
+from datetime import datetime, timezone
 import json
 
 import requests
 
 from infra_vuln_watch.clients import nvd_client, risk_data
 from infra_vuln_watch.configuration.config import SEVERITIES
-from infra_vuln_watch.domain import cve_details
+from infra_vuln_watch.domain import cve_details, ignore_list
 from infra_vuln_watch.domain.identity import inventory_id
 from infra_vuln_watch.application.router import OutputRouter
 from infra_vuln_watch.domain.version_check import NOT_AFFECTED, UNKNOWN, check_version
@@ -15,10 +16,14 @@ from infra_vuln_watch.domain.version_check import NOT_AFFECTED, UNKNOWN, check_v
 DATA_ERRORS = (AttributeError, KeyError, TypeError, ValueError)
 
 
-def evaluate(item, cve, kev=None):
+def utc_today():
+    return datetime.now(timezone.utc).date()
+
+
+def evaluate(item, cve, kev=None, today=None):
     """Return the version result if this CVE should be reported for the item, otherwise None."""
     policy = item['config']['scan']
-    if cve.get('vulnStatus') == 'Rejected' or cve['id'] in policy['ignore_cves']:
+    if cve.get('vulnStatus') == 'Rejected' or ignore_list.is_ignored(cve['id'], policy['ignore_cves'], today or utc_today()):
         return None
     severity = cve_details.get_score(cve)['severity']
     if severity == 'none':
@@ -38,7 +43,7 @@ def evaluate(item, cve, kev=None):
     return result
 
 
-def find_problems(item, candidates=None, kev=None, invalid=None):
+def find_problems(item, candidates=None, kev=None, invalid=None, today=None):
     """Find candidate CVEs and apply the tool's scan and version-matching policy.
 
     With an invalid list, a malformed record is added to it so the other CVEs are still checked.
@@ -48,7 +53,7 @@ def find_problems(item, candidates=None, kev=None, invalid=None):
         candidates = nvd_client.fetch_cves(item)
     for cve in candidates:
         try:
-            result = evaluate(item, cve, kev)
+            result = evaluate(item, cve, kev, today)
         except DATA_ERRORS:
             if invalid is None:
                 raise
@@ -71,6 +76,7 @@ def run_scan(items, dry_run=False):
         print(f'Output setup problem: {error}')
         return 1
 
+    today = utc_today()
     failed = []
     kev_catalogs = {}
     cve_catalogs = {}
@@ -86,8 +92,10 @@ def run_scan(items, dry_run=False):
                                   item['config']['sources']['nvd']], sort_keys=True)
             if cve_key not in cve_catalogs:
                 cve_catalogs[cve_key] = nvd_client.fetch_cves(item)
+            for line in ignore_list.describe(item['config']['scan']['ignore_cves'], today):
+                print(f'  {line}')
             invalid: list[str] = []
-            problems = find_problems(item, candidates=cve_catalogs[cve_key], kev=kev_catalogs[key], invalid=invalid)
+            problems = find_problems(item, candidates=cve_catalogs[cve_key], kev=kev_catalogs[key], invalid=invalid, today=today)
             print(f'  Found {len(problems)} CVE(s) to report')
             new_ids = [cve['id'] for cve, _ in problems if router.needs_reporting(item, cve)]
             risk = {'kev': kev_catalogs[key], 'allow_nvd_kev': kev_config['nvd_fallback'],
@@ -102,6 +110,8 @@ def run_scan(items, dry_run=False):
                     continue
                 if not delivered and target not in failed:
                     failed.append(target)
+            if not router.update_existing(item, cve_catalogs[cve_key], kev_catalogs[key], today) and target not in failed:
+                failed.append(target)
             for identifier in invalid:
                 print(f'  FAILED: invalid vulnerability data for {identifier}')
             if invalid and target not in failed:

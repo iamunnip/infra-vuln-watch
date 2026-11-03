@@ -24,7 +24,7 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0016](0016-run-the-scan-by-hand.md) | Run the scan by hand | Accepted |
 | [0017](0017-use-c4-views-within-arc42.md) | Use C4 views within arc42 | Diagram location amended by [0018](0018-organise-documentation-under-docs.md) |
 | [0018](0018-organise-documentation-under-docs.md) | Organise documentation under docs | Accepted |
-| [0019](0019-layer-source-and-configure-scans-and-delivery.md) | Layer source modules and configure scans and delivery | Severity filter scope amended by [0026](0026-known-exploited-cves-pass-severity-filters.md) |
+| [0019](0019-layer-source-and-configure-scans-and-delivery.md) | Layer source modules and configure scans and delivery | Severity filter scope amended by [0026](0026-known-exploited-cves-pass-severity-filters.md); Jira description format amended by [0029](0029-format-jira-tickets-as-rich-text.md) |
 | [0020](0020-group-source-by-responsibility.md) | Group source modules by responsibility | Accepted |
 | [0021](0021-track-deployments-independently.md) | Track deployments independently | Accepted |
 | [0022](0022-group-inventory-product-metadata.md) | Group inventory product metadata | Accepted |
@@ -33,3 +33,7 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0025](0025-widen-reporter-name-and-status-matching.md) | Widen reporter name and status matching | Accepted |
 | [0026](0026-known-exploited-cves-pass-severity-filters.md) | Known exploited CVEs pass severity filters | Accepted |
 | [0027](0027-lock-scan-dependencies-and-add-quality-checks.md) | Lock scan dependencies and add quality checks | Accepted |
+| [0028](0028-update-open-tickets-on-each-scan.md) | Update open tickets on each scan | Accepted |
+| [0029](0029-format-jira-tickets-as-rich-text.md) | Format Jira tickets as rich text | Accepted |
+| [0030](0030-give-ignored-cves-reasons-and-expiry-dates.md) | Give ignored CVEs reasons and expiry dates | Accepted |
+| [0031](0031-respect-rate-limits-on-outputs.md) | Respect rate limits on outputs | Accepted |

@@ -32,11 +32,12 @@ The summary is capped at 120 characters; output clients apply their title-length
 | Destination | Presentation |
 | --- | --- |
 | GitHub | Plain issue title, with separate severity and deployment labels |
-| Jira Cloud | Plain ticket summary, with separate labels; Jira priority can be configured through additional create fields |
+| Jira Cloud | Plain ticket summary, with separate labels and a formatted description; Jira priority can be configured through additional create fields |
 | Slack | Plain-text message block plus an escaped title in notification fallback text; Markdown is disabled for fallback text |
 
 Square brackets are visual separators, not special markup or coloured badges. The same shared
-title is used across destinations. Existing issues and tickets are not renamed by later scans.
+title is used across destinations. Later scans change the title of an open ticket only when its score
+changes, as described under [keeping tickets current](#keeping-tickets-current).
 
 ## Description sections
 
@@ -101,6 +102,8 @@ needs a manual check.
 | `tool-openbao` | The inventory item. Each tool gets its own label |
 | `needs-review` | NVD did not give enough version data to be sure, or the reporter used another name for a tool the description mentions |
 | `known-exploited` | The CVE is on the CISA KEV list |
+| `overdue` | The fix date has passed and the ticket is still open |
+| `no-longer-affected` | The latest scan found the installed version is no longer affected. Check and close |
 
 The score has no label, because it is in the title and the severity label already groups scores.
 
@@ -126,6 +129,23 @@ stateDiagram-v2
 | NotPlanned | Closed as not planned, with a reason | A person |
 
 The scan never closes or reopens an issue.
+
+## Keeping tickets current
+
+Each normal scan checks the open GitHub issues and Jira tickets of the targets it scans, and adds a
+comment when it changes one:
+
+| When | What changes |
+| --- | --- |
+| The CVE joins the CISA KEV list | Adds `known-exploited` |
+| The fix date in the ticket has passed | Adds `overdue`, unless the version is no longer affected |
+| The score changes | Updates the title and severity label. The fix date stays |
+| The installed version no longer matches | Adds `no-longer-affected` |
+| The version matches again | Removes `no-longer-affected` |
+
+Closed tickets and CVEs in `ignore_cves` are left alone, and Slack is not notified. Dry runs change
+nothing, and `scan.update_existing: false` turns this off. See
+[ADR 0028](../../adr/0028-update-open-tickets-on-each-scan.md).
 
 ## Changes made to NVD text
 

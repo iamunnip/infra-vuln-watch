@@ -42,6 +42,11 @@ Each issue also shows:
 - **Who is responsible:** the team and owner from the inventory.
 - **Labels:** `severity-*`, `tool-*`, and `known-exploited` or `needs-review` when they apply.
 
+Each later scan keeps open tickets current. It adds `known-exploited`, `overdue` or
+`no-longer-affected` with a comment, and updates a changed score in the title. It never closes a ticket.
+Jira tickets get the same formatted details as GitHub issues, ignored CVEs can have a reason and expiry
+date, and output services that ask the scanner to slow down are respected.
+
 See the [issue format](docs/diataxis/reference/issue-format.md) for the full details.
 
 ## Why not just ask NVD for my version?

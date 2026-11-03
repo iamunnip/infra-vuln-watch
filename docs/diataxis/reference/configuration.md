@@ -31,6 +31,7 @@ scan:
   include_unknown_severity: true
   report_unknown_versions: true
   ignore_cves: []
+  update_existing: true
 sources:
   nvd:
     product_search: true
@@ -118,8 +119,27 @@ YAML cannot override it. Dry runs still read enabled vulnerability data sources.
 
 `min_severity` accepts `low`, `medium`, `high` or `critical`. Unknown severity is controlled
 separately by `include_unknown_severity`. `report_unknown_versions` controls whether uncertain
-version matches are reported. `ignore_cves` suppresses the listed CVE IDs. Rejected records
-and score 0.0 remain excluded.
+version matches are reported. Rejected records and score 0.0 remain excluded.
+
+`ignore_cves` suppresses the listed CVEs. An entry is a CVE ID, or a mapping that records why and for
+how long:
+
+```yaml
+scan:
+  ignore_cves:
+    - CVE-2026-1111
+    - id: CVE-2026-2222
+      reason: The affected plugin is not installed
+      expires: 2027-01-31
+```
+
+An ignore lasts through its `expires` date, and the finding can be reported again after that. Entries
+must look like CVE IDs, so a typing mistake fails validation. Each scan prints its ignores, with
+their reasons and any that have expired. See
+[ADR 0030](../../adr/0030-give-ignored-cves-reasons-and-expiry-dates.md).
+
+`update_existing`, on by default, keeps open tickets current on each normal scan. See
+[keeping tickets current](issue-format.md#keeping-tickets-current).
 
 `min_severity` and `include_unknown_severity` do not apply to known exploited CVEs, so a strict
 severity filter can still produce a low-severity issue when the CVE is under attack. Known exploited
@@ -156,12 +176,19 @@ still be structurally complete for an enabled Jira destination, including in dry
   additional Jira create fields, such as `priority` or `customfield_12345`. The configured issue
   type must allow them on its create screen. Project, issue type, summary, description and
   labels are controlled by the scanner and cannot be overridden through `fields`.
-  Descriptions preserve the finding as plain text inside Atlassian Document Format; GitHub
-  Markdown styling is not converted into Jira rich text. `create_wait` is at least 1 second.
+  Descriptions use Atlassian Document Format with panels, tables, headings and lists, and fall
+  back to plain text if Jira rejects that with a 400 response. CVE text cannot create mentions or
+  media. `create_wait` is at least 1 second.
 - **Slack:** set `enabled: true` and provide an incoming webhook in the variable named by
   `webhook_env`. It must be a Slack HTTPS incoming webhook URL, including GovSlack if used.
   The webhook determines the channel. Messages use plain-text blocks and an escaped title as notification fallback text to prevent
   CVE text from triggering Slack mentions. `send_wait` is at least 1 second.
+
+All three accept `max_rate_limit_wait`, which defaults to 120 seconds and accepts 0 to 3600. When a
+service asks the scanner to slow down, it waits as asked and retries once. If the wait would be longer
+than this setting, or the retry is limited too, nothing more goes to that destination during the run.
+Other destinations continue, the run exits with 1, and the next scan catches up. See
+[ADR 0031](../../adr/0031-respect-rate-limits-on-outputs.md).
 
 Score 0.0 exclusion, search endpoint URLs, identity markers and required tracker labels are implementation
 invariants rather than configurable values. The inventory path and selected config path remain

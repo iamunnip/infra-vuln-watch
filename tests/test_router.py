@@ -27,10 +27,12 @@ def clients(monkeypatch):
     github = Mock()
     github.get_reported_ids.return_value = set()
     github.reported_links = {}
+    github.open_findings = {}
     github.create_issue.return_value = 'https://github.com/o/r/issues/1'
     jira = Mock()
     jira.get_reported_ids.return_value = set()
     jira.reported_links = {}
+    jira.open_findings = {}
     jira.create_issue.return_value = 'https://example.atlassian.net/browse/SEC-1'
     slack = Mock()
     slack.needs_delivery.return_value = True

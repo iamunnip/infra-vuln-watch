@@ -32,9 +32,9 @@ def test_severity_filter_keeps_unknown_unless_explicitly_disabled(monkeypatch):
 
 def test_unknown_version_and_ignore_filters_are_independent(monkeypatch):
     monkeypatch.setattr(scanner.nvd_client, 'fetch_cves', lambda item: [
-        cve('ignore', 9), cve('unknown-version', 9, versions=False), cve('keep', 8),
+        cve('CVE-2026-1111', 9), cve('unknown-version', 9, versions=False), cve('keep', 8),
     ])
-    settings = {'scan': {'report_unknown_versions': False, 'ignore_cves': ['ignore']}}
+    settings = {'scan': {'report_unknown_versions': False, 'ignore_cves': ['CVE-2026-1111']}}
     assert [value['id'] for value, _ in scanner.find_problems(tool(settings))] == ['keep']
 
 
@@ -72,8 +72,8 @@ def test_known_exploited_cve_passes_severity_filters():
 
 
 def test_known_exploited_cve_still_respects_explicit_exclusions():
-    settings = {'scan': {'min_severity': 'critical', 'ignore_cves': ['ignored']}}
-    candidates = [exploited('ignored'), exploited('zero', 0), {**exploited('rejected'), 'vulnStatus': 'Rejected'}]
+    settings = {'scan': {'min_severity': 'critical', 'ignore_cves': ['CVE-2026-1111']}}
+    candidates = [exploited('CVE-2026-1111'), exploited('zero', 0), {**exploited('rejected'), 'vulnStatus': 'Rejected'}]
     assert scanner.find_problems(tool(settings), candidates=candidates) == []
 
 

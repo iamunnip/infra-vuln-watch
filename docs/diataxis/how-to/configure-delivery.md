@@ -65,6 +65,9 @@ remains reportable unless explicitly disabled. Other tools keep their global set
 A separate Slack channel can be selected per tool by setting `webhook_env` to a different
 variable name and mapping that secret into the workflow environment.
 
+Rate limits, and how many scans a large backlog can need, are covered in the
+[configuration reference](../reference/configuration.md#destinations).
+
 ## Preview and run
 
 ```bash
