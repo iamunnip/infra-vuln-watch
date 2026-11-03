@@ -31,5 +31,6 @@
 | A destination keeps rate limiting the scan | It gets no more requests that run, and the others continue |
 | Jira rejects a formatted ticket | The ticket is sent again as plain text |
 | A Mermaid diagram has a syntax error | The tests fail in CI |
+| A link would not be found on GitHub, or text names a file that does not exist | The documentation check and tests fail |
 
 [Architecture index](README.md)

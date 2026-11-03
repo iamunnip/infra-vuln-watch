@@ -12,7 +12,7 @@ CVE. A deployment is a specific installation, not just a version number. Several
 can share an environment name but must have distinct stable IDs. A ticket records remediation
 work; a notification draws attention to that work. An acknowledged notification is not evidence
 that the vulnerability was fixed, and a closed ticket is not proof that deployed software was
-upgraded. Verify remediation using the [fix process](/policies/vulnerability-fix-process.md).
+upgraded. Verify remediation using the [fix process](vulnerability-fix-process.md).
 
 # Independent delivery
 

@@ -35,7 +35,9 @@ Preserve accepted ADR content. In the index, link to later decisions that replac
 
 Run `python scripts/check_docs.py` from the repository root after installing the project.
 CI runs the same check for local Markdown links, heading anchors and OKF metadata conventions.
-Leading `/` links in `knowledge/` resolve from the knowledge bundle root; elsewhere they
-resolve from the repository root. Remote URLs and Mermaid rendering are not checked.
+Links are checked the way GitHub resolves them, so a leading `/` means the repository root. Links in
+`knowledge/` must be relative, because a leading `/` link there is not found on GitHub. Files named in plain
+text and this repository's own GitHub URLs must exist too. Other remote URLs are not checked, and
+`tests/test_mermaid.py` checks Mermaid syntax.
 The checker handles inline links and reference definitions in Markdown prose; it is not a
 complete Markdown parser or full OKF schema validator.
