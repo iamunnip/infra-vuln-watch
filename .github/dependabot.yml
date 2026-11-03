@@ -11,3 +11,14 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      cache-actions:
+        applies-to: version-updates
+        patterns:
+          - actions/cache
+          - actions/cache/*
+      cache-actions-security:
+        applies-to: security-updates
+        patterns:
+          - actions/cache
+          - actions/cache/*

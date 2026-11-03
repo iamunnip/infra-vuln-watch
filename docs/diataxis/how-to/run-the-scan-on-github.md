@@ -30,3 +30,10 @@ They are only required when those destinations are enabled in global or per-tool
 Follow [Configure delivery](configure-delivery.md). Custom credential variable names need
 matching workflow environment mappings. Slack receipts under `.vuln-watch/` are cached between
 runs on the same branch; cache loss can cause repeat notifications.
+
+## Dependency updates
+
+Dependabot groups `actions/cache`, `actions/cache/restore` and `actions/cache/save` updates
+into one PR per update type, keeping the restore and save steps aligned. Version updates and
+security updates have separate groups. Other GitHub Actions keep their individual update PRs.
+The cache steps remain pinned to the same reviewed commit; update both together.
