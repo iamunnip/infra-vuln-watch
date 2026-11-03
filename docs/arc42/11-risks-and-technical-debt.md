@@ -16,6 +16,7 @@
 | Reporter and CPE names differ | Review issues instead of exact answers, and some false alarms | Add `tool.aliases`, or use `ignore_cves` for an unrelated product ([ADR 0025](../adr/0025-widen-reporter-name-and-status-matching.md)) |
 | Lockfile falls behind `pyproject.toml` | Scan runs other versions than declared | A test fails when they disagree ([ADR 0027](../adr/0027-lock-scan-dependencies-and-add-quality-checks.md)) |
 | Scans write to existing tickets and tell Slack | Comments and messages notify people, and a first scan can be noisy, and a failed label can repeat a comment | Changes are made only when facts change, and `scan.update_existing` turns them off |
+| A diagram parses but looks wrong, or GitHub uses another Mermaid version | Unreadable or undrawn diagram | Every diagram is parsed in CI, but not drawn. Check new diagrams on GitHub ([ADR 0034](../adr/0034-parse-mermaid-diagrams-in-tests.md)) |
 | Fake services differ from the real ones | A delivery bug passes the mock tests | Mock tests apply each service's main rules, and Jira falls back to plain text. Check the first real run |
 | A large backlog meets rate limits | Delivery takes several scans | The scan stops sending to that destination and fails, and the next one catches up ([ADR 0031](../adr/0031-respect-rate-limits-on-outputs.md)) |
 
