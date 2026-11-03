@@ -104,6 +104,7 @@ needs a manual check.
 | `known-exploited` | The CVE is on the CISA KEV list |
 | `overdue` | The fix date has passed and the ticket is still open |
 | `no-longer-affected` | The latest scan found the installed version is no longer affected. Check and close |
+| `slack-<hash>` | The Slack channel for this hash has been told about this finding. Removing it can repeat the notification |
 
 The score has no label, because it is in the title and the severity label already groups scores.
 
@@ -143,9 +144,13 @@ comment when it changes one:
 | The installed version no longer matches | Adds `no-longer-affected` |
 | The version matches again | Removes `no-longer-affected` |
 
-Closed tickets and CVEs in `ignore_cves` are left alone, and Slack is not notified. Dry runs change
-nothing, and `scan.update_existing: false` turns this off. See
+Closed tickets and CVEs in `ignore_cves` are left alone. Dry runs change nothing, and
+`scan.update_existing: false` turns this off. See
 [ADR 0028](../../adr/0028-update-open-tickets-on-each-scan.md).
+
+When Slack is enabled, each change also sends one message with the title, the same text as the comment and
+a link, even with two trackers. `notifications.slack.notify_updates: false` turns this off. See
+[ADR 0033](../../adr/0033-notify-slack-about-ticket-updates.md).
 
 ## Changes made to NVD text
 

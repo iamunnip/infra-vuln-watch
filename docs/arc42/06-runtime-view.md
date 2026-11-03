@@ -36,15 +36,22 @@ sequenceDiagram
                 M->>M: Print destination preview without output calls or receipt writes
             else Normal delivery
                 M->>T: Create only missing tickets, independently
-                opt Slack enabled and receipt absent, or repeat enabled
+                opt Slack enabled and no receipt or ticket label, or repeat enabled
                     M->>S: Send plain-text notification
                     S-->>M: Delivery acknowledgement
                     M->>F: Atomically save successful receipt unless repeating
+                    M->>T: Add the delivery label to this finding's tickets unless repeating
                 end
             end
         end
         opt Normal delivery and update_existing on
             M->>T: Comment on and relabel this target's open tickets whose facts changed
+            opt Slack enabled and notify_updates on
+                M->>S: Send one message for each change
+            end
+        end
+        opt Normal delivery, Slack enabled and not repeating
+            M->>T: Label tickets whose delivery is only in the receipt file
         end
     end
     M-->>A: Exit 1 on source, setup or delivery failure; otherwise 0
@@ -63,10 +70,11 @@ NVD KEV fallback can identify exploitation without a catalog download.
 
 Preview mode skips every output API and receipt write, while retaining enabled vulnerability
 source reads. Each tracker independently suppresses previously reported `tool/CVE` markers for legacy records and `tool/deployment-id/CVE` markers for deployments,
-including closed tickets. Existing tickets are not refreshed or reopened. Slack receipts
-provide independent deduplication and allow notification retries after successful ticket
-creation. Remote writes are not automatically retried; ambiguous timeouts and lost receipts
-can cause duplicates on a later run.
+including closed tickets. Open tickets are updated when their facts change, and closed tickets are not
+changed or reopened. Slack receipts and ticket delivery labels provide independent deduplication and allow
+notification retries after successful ticket creation. Remote writes are not automatically retried, except
+once when a service rate limits them. Ambiguous timeouts can cause duplicates on a later run, as can a lost
+receipt when Slack has no tracker.
 
 ### Fixing a vulnerability
 

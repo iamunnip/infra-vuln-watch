@@ -46,6 +46,7 @@ class GitHubClient:
         }
         self.reported_links = {}
         self.open_findings = {}
+        self.all_findings = {}
 
     def request(self, method, path, **kwargs):
         """Send one request, waiting once if GitHub asks, and raise on any failure."""
@@ -102,6 +103,11 @@ class GitHubClient:
                 reported.add(marker)
                 if issue.get("html_url"):
                     self.reported_links[marker] = issue["html_url"]
+                if "number" in issue:
+                    self.all_findings[marker] = {
+                        "ref": issue["number"],
+                        "labels": [label["name"] for label in issue.get("labels", [])],
+                    }
                 if issue.get("state") == "open" and "number" in issue:
                     self.open_findings[marker] = {
                         "ref": issue["number"],
@@ -116,6 +122,11 @@ class GitHubClient:
         time.sleep(self.config["create_wait"])
         response = self.request("POST", "issues", json={"title": title[:256], "body": body, "labels": labels})
         return response.json()["html_url"]
+
+    @staticmethod
+    def ref_from_url(url):
+        """Return the issue number from its web address."""
+        return int(url.rstrip("/").rsplit("/", 1)[1])
 
     def update_ticket(self, record, add_labels=(), remove_labels=(), title=None, comment=None):
         """Apply a planned update. The comment goes first, because the labels stop it repeating."""

@@ -44,6 +44,7 @@ class JiraClient:
         self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         self.reported_links = {}
         self.open_findings = {}
+        self.all_findings = {}
 
     def request(self, method, path, **kwargs):
         """Send one request, waiting once if Jira asks, and return the response unchecked."""
@@ -75,6 +76,7 @@ class JiraClient:
                         reported.add(marker)
                         if issue.get('key'):
                             self.reported_links[marker] = f"{self.base_url}/browse/{issue['key']}"
+                            self.all_findings[marker] = {'ref': issue['key'], 'labels': fields.get('labels') or []}
                             if ((fields.get('status') or {}).get('statusCategory') or {}).get('key') != 'done':
                                 self.open_findings[marker] = {
                                     'ref': issue['key'],
@@ -109,6 +111,11 @@ class JiraClient:
         except (KeyError, TypeError, ValueError) as error:
             raise requests.RequestException('Jira did not return a valid created ticket key') from error
         return f'{self.base_url}/browse/{key}'
+
+    @staticmethod
+    def ref_from_url(url):
+        """Return the ticket key from its web address."""
+        return url.rstrip('/').rsplit('/', 1)[1]
 
     def update_ticket(self, record, add_labels=(), remove_labels=(), title=None, comment=None):
         """Apply a planned update. The comment goes first, because the labels stop it repeating."""

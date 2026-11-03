@@ -33,7 +33,9 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0025](0025-widen-reporter-name-and-status-matching.md) | Widen reporter name and status matching | Accepted |
 | [0026](0026-known-exploited-cves-pass-severity-filters.md) | Known exploited CVEs pass severity filters | Accepted |
 | [0027](0027-lock-scan-dependencies-and-add-quality-checks.md) | Lock scan dependencies and add quality checks | Accepted |
-| [0028](0028-update-open-tickets-on-each-scan.md) | Update open tickets on each scan | Accepted |
+| [0028](0028-update-open-tickets-on-each-scan.md) | Update open tickets on each scan | Slack notification amended by [0033](0033-notify-slack-about-ticket-updates.md) |
 | [0029](0029-format-jira-tickets-as-rich-text.md) | Format Jira tickets as rich text | Accepted |
 | [0030](0030-give-ignored-cves-reasons-and-expiry-dates.md) | Give ignored CVEs reasons and expiry dates | Accepted |
 | [0031](0031-respect-rate-limits-on-outputs.md) | Respect rate limits on outputs | Accepted |
+| [0032](0032-record-slack-delivery-on-tickets.md) | Record Slack delivery on tickets | Accepted |
+| [0033](0033-notify-slack-about-ticket-updates.md) | Notify Slack about ticket updates | Accepted |

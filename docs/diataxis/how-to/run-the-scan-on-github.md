@@ -29,7 +29,8 @@ The workflow maps `JIRA_EMAIL`, `JIRA_API_TOKEN` and `SLACK_WEBHOOK_URL` from re
 They are only required when those destinations are enabled in global or per-tool settings.
 Follow [Configure delivery](configure-delivery.md). Custom credential variable names need
 matching workflow environment mappings. Slack receipts under `.vuln-watch/` are cached between
-runs on the same branch; cache loss can cause repeat notifications.
+runs on the same branch. With a tracker enabled, ticket labels prevent repeats if the cache is lost;
+with Slack alone, cache loss can cause repeat notifications.
 
 ## Dependency updates
 

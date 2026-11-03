@@ -78,6 +78,7 @@ notifications:
     webhook_env: SLACK_WEBHOOK_URL
     timeout: 30
     repeat: false
+    notify_updates: true
     state_file: .vuln-watch/slack.json
     send_wait: 1
 ```
@@ -206,14 +207,21 @@ attempts to the others or later findings, but makes the run exit with code 1.
 Slack uses a separate atomic receipt file at `state_file`. Receipts include a hash of the
 webhook destination and the finding identity, never the secret URL. Successfully notified
 findings are skipped on later runs; failed notifications can retry without recreating tickets.
-Set `repeat: true` to notify about every selected finding on every run and bypass local receipts.
-Slack does not read channel history. A notification retry may contain only the NVD link if
-tickets were created on a previous run.
+A successful notification also adds a `slack-<hash>` label to the finding's tickets, using a short
+one-way hash of the webhook, and a finding with that label is treated as delivered. Each scan also adds it
+to tickets whose delivery is recorded only in the receipt file. See
+[ADR 0032](../../adr/0032-record-slack-delivery-on-tickets.md).
+Set `repeat: true` to notify about every selected finding on every run and bypass receipts and labels.
+Slack does not read channel history. A notification retry links the finding's existing tickets.
+
+`notify_updates`, on by default, also sends a message when a scan updates an open ticket. See
+[keeping tickets current](issue-format.md#keeping-tickets-current).
 
 Persist the receipt file between runs for deduplication. The supplied GitHub workflow restores
 and saves `.vuln-watch/` through a branch-specific Actions cache, including after partial failures.
-If you choose a different directory, update the workflow's cache path. Cache eviction or a
-missing receipt file can cause repeat notifications. A process interruption after a successful
+If you choose a different directory, update the workflow's cache path. With a tracker enabled, ticket
+labels prevent repeats when the file is lost. With Slack alone, cache eviction or a missing receipt file
+can cause repeat notifications, and GitHub evicts caches unused for 7 days. A process interruption after a successful
 remote write but before its receipt is saved can also cause a repeat; delivery is not exactly
 once. Atomic writes prevent torn state files, but separate processes must not write the same
 file concurrently. The workflow serialises its scan jobs; local invocations require the same

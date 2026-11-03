@@ -78,8 +78,9 @@ The preview names each selected destination and creates no tickets, notification
 receipt files. It still contacts enabled vulnerability sources. Review the output, then run
 the same command without `--dry-run` when you intend to deliver findings.
 
-Preserve the Slack receipt directory between executions. The supplied workflow caches the
-default `.vuln-watch/` path; do not commit receipts. Failed deliveries make the run fail, while
+Preserve the Slack receipt directory between executions, which matters most for Slack without a
+tracker, because tickets otherwise record delivery with a `slack-<hash>` label. The supplied workflow caches
+the default `.vuln-watch/` path; do not commit receipts. Failed deliveries make the run fail, while
 successful deliveries to the other destinations are retained. See the
 [configuration reference](../reference/configuration.md) for all settings and retry limitations.
 

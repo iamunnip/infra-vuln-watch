@@ -4,7 +4,8 @@
   issue, so it cannot mention users or fake the marker.
 - **Duplicate protection:** workflow scans are serialised, and each issue holds a hidden `vuln-watch-id`. GitHub history is restricted to the `vuln-watch` label. Jira history uses its project and that
   label without a status filter. Slack uses local atomic receipts, persisted in an Actions
-  cache in the supplied workflow; cache loss can allow repeats.
+  cache in the supplied workflow, plus a delivery label on each ticket. Cache loss can allow
+  repeats only for Slack without a tracker.
 - **Least privilege:** the workflow token can only read code and write issues. Actions are
   pinned to commit SHAs.
 - **Human remediation:** people upgrade tools and close issues, and the scan never does either. It

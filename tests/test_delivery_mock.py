@@ -321,10 +321,11 @@ def test_cve_joining_kev_later_updates_both_trackers_once(scan, services):
     assert 'known-exploited' in services.tickets[0]['fields']['labels']
     assert 'CISA KEV' in services.comments[0][1]
     assert services.jira_comments[0][0] == 'SEC-1'
-    assert len(services.slack) == 1
+    assert len(services.slack) == 2
 
     scan()
     assert len(services.comments) == 1 and len(services.jira_comments) == 1
+    assert len(services.slack) == 2
 
 
 def test_changed_score_updates_title_and_severity_label(scan, services):
@@ -407,3 +408,129 @@ def test_every_formatted_ticket_passes_the_fake_jira_adf_rules(scan, services):
     assert scan()[0] == 0
     assert len(services.jira_create_attempts) == 3
     assert len(services.tickets) == 3
+
+
+def slack_label(services):
+    labels = [label for label in labels_of(services.issues[0]) if label.startswith('slack-')]
+    assert len(labels) == 1
+    return labels[0]
+
+
+def test_delivery_is_recorded_on_tickets_without_revealing_the_webhook(scan, services):
+    scan()
+    label = slack_label(services)
+    assert label in services.tickets[0]['fields']['labels']
+    assert 'mock-webhook-secret' not in label
+
+
+def test_lost_receipt_file_does_not_repeat_notifications(scan, services, tmp_path):
+    scan()
+    (tmp_path / '.vuln-watch' / 'slack.json').unlink()
+    code, _ = scan()
+    assert code == 0
+    assert len(services.slack) == 1
+
+
+def test_lost_receipt_file_does_not_repeat_for_a_closed_ticket(scan, services, tmp_path):
+    scan()
+    services.issues[0]['state'] = 'closed'
+    services.tickets[0]['fields']['status'] = {'statusCategory': {'key': 'done'}}
+    (tmp_path / '.vuln-watch' / 'slack.json').unlink()
+    assert scan()[0] == 0
+    assert len(services.slack) == 1
+
+
+def test_failed_slack_delivery_leaves_no_label_and_still_retries(scan, services):
+    services.slack_responses = [(500, {})]
+    assert scan()[0] == 1
+    assert not [label for label in labels_of(services.issues[0]) if label.startswith('slack-')]
+    assert scan()[0] == 0
+    assert len(services.slack) == 1
+    assert slack_label(services)
+
+
+def test_tickets_delivered_before_labels_existed_get_labelled_from_the_receipt(scan, services, tmp_path):
+    scan()
+    label = slack_label(services)
+    services.issues[0]['labels'] = [item for item in services.issues[0]['labels'] if item['name'] != label]
+    services.tickets[0]['fields']['labels'].remove(label)
+    assert scan()[0] == 0
+    assert len(services.slack) == 1
+    assert slack_label(services) == label
+    assert label in services.tickets[0]['fields']['labels']
+
+
+def test_a_different_webhook_is_still_notified(scan, services, monkeypatch):
+    scan()
+    other = 'https://hooks.slack.com/services/T000/B000/mock-webhook-secret-2'
+    monkeypatch.setenv('SLACK_WEBHOOK_URL', other)
+    monkeypatch.setattr(Services, 'slack_hook', lambda self, request, url: (self.slack.append(json.loads(request.body)), (200, b'ok', {}))[1])
+    assert scan()[0] == 0
+    assert len(services.slack) == 2
+
+
+def test_repeat_mode_ignores_ticket_labels_and_adds_none(scan, services):
+    repeat = '    repeat: true\n'
+    scan(config=repeat)
+    assert not [label for label in labels_of(services.issues[0]) if label.startswith('slack-')]
+    scan(config=repeat)
+    assert len(services.slack) == 2
+
+
+def test_failure_to_label_a_ticket_only_warns(scan, services):
+    original = services.github
+
+    def refuse_labels(request, url):
+        if request.method == 'POST' and url.path.endswith('/labels') and 'issues' in url.path:
+            return 500, {}, {}
+        return original(request, url)
+    services.github = refuse_labels
+    code, output = scan()
+    assert code == 0
+    assert 'WARNING: could not record Slack delivery' in output
+
+
+def test_slack_hears_about_a_ticket_update_once_across_both_trackers(scan, services):
+    scan()
+    services.kev = ['CVE-2026-0001']
+    assert scan()[0] == 0
+    update = services.slack[-1]
+    assert len(services.slack) == 2
+    text = text_of(update)
+    assert text.startswith('Updated: [HIGH] [PROD] [7.5] CVE-2026-0001')
+    assert 'CISA KEV' in text
+    assert 'https://github.com/acme/scans/issues/1' in text
+    assert update['blocks'][0]['text']['type'] == 'plain_text'
+
+
+def test_slack_update_shows_the_new_title_when_the_score_changes(scan, services):
+    scan()
+    services.cves = [make_cve('CVE-2026-0001', score=9.8)]
+    assert scan()[0] == 0
+    assert text_of(services.slack[-1]).startswith('Updated: [CRITICAL] [PROD] [9.8]')
+
+
+def test_slack_update_notifications_can_be_turned_off(scan, services):
+    scan()
+    services.kev = ['CVE-2026-0001']
+    assert scan(config='    notify_updates: false\n')[0] == 0
+    assert len(services.slack) == 1
+    assert services.comments
+
+
+def test_failed_slack_update_fails_the_run_but_keeps_the_ticket_change(scan, services):
+    scan()
+    services.kev = ['CVE-2026-0001']
+    services.slack_responses = [(500, {})]
+    code, output = scan()
+    assert code == 1
+    assert 'FAILED: Slack update' in output
+    assert 'known-exploited' in labels_of(services.issues[0])
+
+
+def test_dry_run_sends_no_slack_update(scan, services):
+    scan()
+    services.kev = ['CVE-2026-0001']
+    calls = len(services.output_calls())
+    assert scan(extra=['--dry-run'])[0] == 0
+    assert len(services.output_calls()) == calls

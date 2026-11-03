@@ -30,6 +30,7 @@ class OutputRouter:
         self.routes = {}
         # Destinations that are still rate limiting us get no more requests this run.
         self.limited = set()
+        self.notified_updates = set()
         trackers: dict[tuple[str, str], dict] = {}
         slacks = {}
         states = {}
@@ -86,7 +87,21 @@ class OutputRouter:
         marker = finding_id(item, cve)
         return (route['preview'] or (not route['trackers'] and route['slack'] is None)
                 or any(marker not in tracker['reported'] for tracker in route['trackers'])
-                or (route['slack'] is not None and route['slack'].needs_delivery(marker)))
+                or self.slack_pending(route, marker))
+
+    @staticmethod
+    def slack_pending(route, marker):
+        """Return True if Slack still needs this finding, by local receipt or by ticket label.
+
+        A ticket label outlives a lost receipt file, so a lost cache cannot repeat notifications.
+        """
+        slack = route['slack']
+        if slack is None or not slack.needs_delivery(marker):
+            return False
+        if slack.state is None:
+            return True  # Repeat mode notifies on every run.
+        return not any(slack.receipt_label in tracker['client'].all_findings.get(marker, {}).get('labels', ())
+                       for tracker in route['trackers'])
 
     def report(self, item, cve, result, risk):
         route = self.routes[inventory_id(item)]
@@ -129,6 +144,7 @@ class OutputRouter:
             try:
                 url = tracker['client'].create_issue(title, body, labels)
                 tracker['reported'].add(marker)
+                tracker['client'].all_findings[marker] = {'ref': tracker['client'].ref_from_url(url), 'labels': list(labels)}
                 links.append(url)
                 print(f"  Opened {tracker['kind']}: {url}")
             except RateLimited:
@@ -139,13 +155,15 @@ class OutputRouter:
                 print(f"  FAILED: {tracker['kind']} delivery for {cve['id']}")
                 success = False
         slack = route['slack']
-        if slack is not None and id(slack) in self.limited and slack.needs_delivery(marker):
+        if id(slack) in self.limited and self.slack_pending(route, marker):
             print(f"  SKIPPED: Slack is rate limited, so {cve['id']} waits for the next scan")
             success = False
-        elif slack is not None and slack.needs_delivery(marker):
+        elif self.slack_pending(route, marker):
             try:
                 slack.send(marker, title, links)
                 print(f"  Sent Slack notification for {cve['id']}")
+                if slack.state is not None:
+                    self.label_slack_delivery(route, marker)
             except RateLimited:
                 self.limited.add(id(slack))
                 print('  FAILED: Slack is rate limiting us, so no more will be sent this run')
@@ -154,6 +172,54 @@ class OutputRouter:
                 print(f"  FAILED: Slack delivery or receipt persistence for {cve['id']}")
                 success = False
         return success
+
+    def label_slack_delivery(self, route, marker):
+        """Record a delivered notification on its tickets. Failure only risks a later repeat."""
+        slack = route['slack']
+        for tracker in route['trackers']:
+            record = tracker['client'].all_findings.get(marker)
+            if record is None or slack.receipt_label in record['labels'] or id(tracker) in self.limited:
+                continue
+            try:
+                tracker['client'].update_ticket(record, add_labels=[slack.receipt_label])
+                record['labels'] = [*record['labels'], slack.receipt_label]
+            except RateLimited:
+                self.limited.add(id(tracker))
+                print(f"  WARNING: {tracker['kind']} is rate limiting us, so Slack delivery labels wait for the next scan")
+            except (requests.RequestException, KeyError, TypeError, ValueError):
+                print(f"  WARNING: could not record Slack delivery on the {tracker['kind']} ticket for {marker}")
+
+    def backfill_slack_labels(self, item):
+        """Label tickets whose notification is only recorded in the local receipt file."""
+        route = self.routes[inventory_id(item)]
+        slack = route['slack']
+        if route['preview'] or slack is None or slack.state is None:
+            return
+        for tracker in route['trackers']:
+            for marker in list(tracker['client'].all_findings):
+                if marker.rpartition('/')[0] == inventory_id(item) and not slack.needs_delivery(marker):
+                    self.label_slack_delivery(route, marker)
+
+    def notify_update(self, item, route, marker, title, note, link):
+        """Tell Slack once per run about a ticket update, and return False if that failed."""
+        slack = route['slack']
+        settings = item['config']['notifications']['slack']
+        if slack is None or not settings['notify_updates'] or (marker, note) in self.notified_updates:
+            return True
+        self.notified_updates.add((marker, note))
+        if id(slack) in self.limited:
+            print(f'  SKIPPED: Slack is rate limited, so the update for {marker} is only on the ticket')
+            return False
+        try:
+            slack.notify_update(title, note, [link] if link else [])
+            print(f'  Sent Slack update for {marker}')
+            return True
+        except RateLimited:
+            self.limited.add(id(slack))
+            print('  FAILED: Slack is rate limiting us, so no more will be sent this run')
+        except requests.RequestException:
+            print(f'  FAILED: Slack update for {marker}; the change is still on the ticket')
+        return False
 
     def update_existing(self, item, candidates, kev, today):
         """Bring this target's open tickets up to date, and return False if any update failed."""
@@ -177,6 +243,9 @@ class OutputRouter:
                 try:
                     tracker['client'].update_ticket(record, **plan)
                     print(f"  Updated {tracker['kind']} ticket for {cve_id}")
+                    if not self.notify_update(item, route, marker, plan['title'] or record['title'], plan['comment'],
+                                              tracker['client'].reported_links.get(marker)):
+                        success = False
                 except RateLimited:
                     self.limited.add(id(tracker))
                     print(f"  FAILED: {tracker['kind']} is rate limiting us, so no more will be sent this run")

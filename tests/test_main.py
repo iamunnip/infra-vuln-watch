@@ -37,6 +37,7 @@ def inventory(tmp_path, monkeypatch):
 def github(monkeypatch):
     fake = Mock()
     fake.open_findings = {}
+    fake.all_findings = {}
     fake.get_reported_ids.return_value = {"tool/CVE-OLD"}
     monkeypatch.setattr(github_client, "GitHubClient", Mock(return_value=fake))
     return fake
@@ -94,6 +95,7 @@ def test_dry_run_opens_nothing_and_needs_no_token(inventory, monkeypatch, capsys
     monkeypatch.delenv("GITHUB_TOKEN")
     client = Mock()
     client.open_findings = {}
+    client.all_findings = {}
     monkeypatch.setattr(github_client, "GitHubClient", client)
     monkeypatch.setattr(nvd_client, "fetch_cves", lambda item: [make_cve("CVE-NEW", "< 2.0.0")])
 
@@ -225,6 +227,7 @@ notifications:
     monkeypatch.setenv('JIRA_API_TOKEN', 'test-token')
     monkeypatch.setenv('SLACK_WEBHOOK_URL', 'https://hooks.slack.com/services/test/space/secret')
     monkeypatch.setattr(jira_client.time, 'sleep', lambda seconds: None)
+    monkeypatch.setattr(jira_client.requests, 'put', lambda *args, **kwargs: Mock(status_code=204, headers={}))
     monkeypatch.setattr(nvd_client, 'fetch_cves', lambda item: [make_cve('CVE-2026-1234', '< 2.0.0')])
     history = []
     posts = []

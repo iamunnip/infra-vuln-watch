@@ -112,6 +112,7 @@ def run_scan(items, dry_run=False):
                     failed.append(target)
             if not router.update_existing(item, cve_catalogs[cve_key], kev_catalogs[key], today) and target not in failed:
                 failed.append(target)
+            router.backfill_slack_labels(item)
             for identifier in invalid:
                 print(f'  FAILED: invalid vulnerability data for {identifier}')
             if invalid and target not in failed:

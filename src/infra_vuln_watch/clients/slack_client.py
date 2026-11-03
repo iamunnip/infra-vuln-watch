@@ -24,6 +24,8 @@ class SlackClient:
         self.webhook = webhook
         self.config = config
         self.destination = sha256(webhook.encode()).hexdigest()
+        # A short one-way hash, so a public ticket label cannot reveal the webhook.
+        self.receipt_label = f'slack-{self.destination[:12]}'
         self.state = None if config['repeat'] else (state or DeliveryState(config['state_file']))
 
     def receipt(self, marker):
@@ -33,7 +35,16 @@ class SlackClient:
         return self.state is None or self.receipt(marker) not in self.state.delivered
 
     def send(self, marker, title, links):
-        text = '\n'.join([title, *links, 'This product uses the NVD API but is not endorsed or certified by the NVD.'])
+        self.post(title, [title, *links])
+        if self.state is not None:
+            self.state.remember(self.receipt(marker))
+
+    def notify_update(self, title, note, links):
+        """Tell the channel an open ticket changed. Ticket labels stop this repeating, not receipts."""
+        self.post(title, [f'Updated: {title}', note, *links])
+
+    def post(self, title, lines):
+        text = '\n'.join([*lines, 'This product uses the NVD API but is not endorsed or certified by the NVD.'])
         # Plain-text blocks prevent untrusted CVE text from becoming Slack mentions or markup.
         fallback = title.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         payload = {'text': fallback, 'mrkdwn': False, 'blocks': [
@@ -52,5 +63,3 @@ class SlackClient:
         except requests.RequestException:
             # requests errors contain the secret URL; never propagate them to CLI output.
             raise requests.RequestException('Slack delivery failed; check webhook, permissions and rate limits') from None
-        if self.state is not None:
-            self.state.remember(self.receipt(marker))

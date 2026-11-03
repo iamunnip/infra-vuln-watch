@@ -54,6 +54,8 @@ flowchart TD
         router -->|Reads history, creates and updates issues| github
         router -->|Reads history, creates and updates tickets| jira
         router -->|Plans open ticket changes| updates
+        router -->|Labels tickets with Slack delivery| github
+        router -->|Sends ticket update messages| slack
         main -->|Applies ignores| ignores
         router -->|Skips ignored tickets| ignores
         github -->|Sends through| limits

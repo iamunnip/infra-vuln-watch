@@ -19,12 +19,15 @@ upgraded. Verify remediation using the [fix process](/policies/vulnerability-fix
 A finding may need delivery to multiple trackers or channels. Success in one does not imply
 success in another. Track each destination's acknowledgement independently and retry only
 pending deliveries. In this project, GitHub Issues and Jira Cloud keep deployment-specific ticket history; Slack
-notifications use separate local delivery receipts. Closed tickets remain in reporting history.
+notifications use separate local delivery receipts, and record delivery on each ticket as a label. Closed
+tickets remain in reporting history.
 
 # Delivery limitations
 
 Remote acceptance and local acknowledgement are separate events. A timeout or interrupted
-process can leave the sender unsure whether delivery succeeded. Lost receipts, delayed tracker
+process can leave the sender unsure whether delivery succeeded. A record of a notification is more
+durable when kept with the ticket than in a best-effort cache, so lost receipts mainly affect
+notifications with no tracker. Lost receipts, delayed tracker
 search indexes or concurrent sends can cause repeats. Atomic local writes prevent partial
 receipt files but do not provide distributed locking or exactly-once delivery. Failed delivery
 must not appear as a successful scan; failure in one destination should not erase successful
@@ -47,7 +50,8 @@ score can be revised, a fix date can pass and an upgrade can remove the exposure
 when that happens, and record each change where people will see it. Do not close a ticket automatically.
 A matching inventory version does not prove that deployed software was upgraded, so a person confirms.
 Only an explicit not affected result suggests closure. A CVE that was filtered out or missing from
-search results says nothing about whether it was fixed.
+search results says nothing about whether it was fixed. Tell people where they already look, such as a
+notification channel, as well as on the ticket.
 
 # Temporary exceptions
 

@@ -51,6 +51,7 @@ config:
       webhook_env: SLACK_WEBHOOK_URL
       repeat: false
       state_file: .vuln-watch/slack.json
+      notify_updates: true
 
 # Installations to scan independently, each with a stable id, environment, version and ownership.
 # Deployment config overrides tool settings; {} inherits them. Keep ids stable across upgrades.

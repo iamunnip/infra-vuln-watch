@@ -43,7 +43,8 @@ Each issue also shows:
 - **Labels:** `severity-*`, `tool-*`, and `known-exploited` or `needs-review` when they apply.
 
 Each later scan keeps open tickets current. It adds `known-exploited`, `overdue` or
-`no-longer-affected` with a comment, and updates a changed score in the title. It never closes a ticket.
+`no-longer-affected` with a comment, updates a changed score in the title and tells Slack when enabled. It
+never closes a ticket.
 Jira tickets get the same formatted details as GitHub issues, ignored CVEs can have a reason and expiry
 date, and output services that ask the scanner to slow down are respected.
 
@@ -75,7 +76,7 @@ flowchart LR
     selected -->|Yes| route[Independent configured destinations]
     route --> github[GitHub issue if not previously reported]
     route --> jira[Jira Cloud ticket if not previously reported]
-    route --> slack[Slack notification if receipt is absent or repeat is enabled]
+    route --> slack[Slack notification if no receipt or ticket label exists, or repeat is enabled]
     route --> console[Console when no destination is enabled]
 ```
 

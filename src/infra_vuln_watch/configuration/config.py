@@ -34,7 +34,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     },
     "notifications": {
         "slack": {"enabled": False, "webhook_env": "SLACK_WEBHOOK_URL", "timeout": 30,
-                  "repeat": False, "state_file": ".vuln-watch/slack.json", "send_wait": 1, "max_rate_limit_wait": 120},
+                  "repeat": False, "state_file": ".vuln-watch/slack.json", "send_wait": 1, "max_rate_limit_wait": 120,
+                  "notify_updates": True},
     },
 }
 CVE_ID = re.compile(r"CVE-\d{4}-\d{4,}", re.IGNORECASE)
