@@ -14,7 +14,7 @@ flowchart LR
         workflow["scan.yml<br/>Manual trigger; concurrency group: scan"]
         subgraph runner["GitHub hosted Ubuntu runner — Ephemeral node"]
             checkout[("Repository checkout<br/>Inventory, global policy and source")]
-            process["Scanner instance<br/>Python 3.13; pip install ."]
+            process["Scanner instance<br/>Python 3.13; hash-locked install"]
             receipts[("Local Slack receipts<br/>.vuln-watch/")]
             process -->|Reads inventory and configuration| checkout
             process -->|Reads and atomically saves receipts| receipts

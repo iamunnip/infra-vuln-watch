@@ -36,7 +36,16 @@ Run these from the top folder of the repo.
 
 ```bash
 .venv/bin/pip install -e ".[dev]"
-.venv/bin/python -m pytest
+.venv/bin/ruff check src tests scripts
+.venv/bin/mypy
+.venv/bin/python -m pytest --cov --cov-fail-under=90
+```
+
+After changing a dependency in `pyproject.toml`, regenerate the lockfile that the scan installs. Run
+this with pip-tools installed:
+
+```bash
+pip-compile --generate-hashes --strip-extras --all-build-deps --allow-unsafe --no-emit-index-url --output-file=requirements.txt pyproject.toml
 ```
 
 See [configuration](configuration.md) for global settings and per-tool precedence. Invalid

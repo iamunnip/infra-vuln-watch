@@ -1,13 +1,12 @@
 """Create and list issues in this GitHub repository."""
 
-import re
 import time
 
 import requests
 
 from infra_vuln_watch.configuration.config import DEFAULT_CONFIG
+from infra_vuln_watch.domain.identity import MARKER_PATTERN
 
-API_URL = "https://api.github.com"
 MAIN_LABEL = "vuln-watch"
 REVIEW_LABEL = "needs-review"
 KNOWN_EXPLOITED_LABEL = "known-exploited"
@@ -19,9 +18,6 @@ SEVERITY_LABELS = {
     "low": "0e8a16",
     "unknown": "bfd4f2",
 }
-
-# GitHub blocks accounts that create many issues too quickly.
-WAIT_AFTER_CREATE_SECONDS = 3
 
 
 def severity_label(severity):
@@ -44,6 +40,7 @@ class GitHubClient:
             "Authorization": f"Bearer {token}",
             "Accept": "application/vnd.github+json",
         }
+        self.reported_links = {}
 
     def get_all_pages(self, path, params):
         """Download every page of a GitHub list."""
@@ -67,7 +64,8 @@ class GitHubClient:
 
     def create_missing_labels(self, tool_names, deployment_ids=()):
         """Create any of our labels that do not exist yet."""
-        existing = {label["name"] for label in self.get_all_pages("labels", {})}
+        # GitHub label names ignore case, so "Prod" and "prod" are the same label.
+        existing = {label["name"].casefold() for label in self.get_all_pages("labels", {})}
 
         wanted = {MAIN_LABEL: "5319e7", REVIEW_LABEL: "e99695", KNOWN_EXPLOITED_LABEL: "b60205"}
         for severity, color in SEVERITY_LABELS.items():
@@ -78,7 +76,7 @@ class GitHubClient:
             wanted[deployment_label(identifier)] = TOOL_LABEL_COLOR
 
         for name, color in wanted.items():
-            if name not in existing:
+            if name.casefold() not in existing:
                 response = requests.post(
                     f"{self.repo_url}/labels",
                     headers=self.headers,
@@ -86,6 +84,7 @@ class GitHubClient:
                     timeout=self.config["timeout"],
                 )
                 response.raise_for_status()
+                existing.add(name.casefold())
 
     def get_reported_ids(self):
         """Return the ids of everything already reported, including closed issues.
@@ -97,7 +96,10 @@ class GitHubClient:
         issues = self.get_all_pages("issues", {"state": "all", "labels": MAIN_LABEL})
         reported = set()
         for issue in issues:
-            reported.update(re.findall(r"<!-- vuln-watch-id: (\S+) -->", issue.get("body") or ""))
+            for marker in MARKER_PATTERN.findall(issue.get("body") or ""):
+                reported.add(marker)
+                if issue.get("html_url"):
+                    self.reported_links[marker] = issue["html_url"]
         return reported
 
     def create_issue(self, title, body, labels):

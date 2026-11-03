@@ -32,7 +32,8 @@ work in another.
 
 # Filtering and coverage
 
-Severity filters and ignore lists can suppress findings, including known exploited CVEs.
+Severity filters should not hide known exploited CVEs, because exploitation is more urgent than
+any score. Ignore lists can suppress them, but only by naming each CVE deliberately.
 Disabling unknown results or a vulnerability search reduces coverage. An empty selected result
 therefore describes the configured search and filtering policy, not an assurance of security.
 

@@ -9,10 +9,12 @@
 | Nobody runs the scan | New CVEs go unnoticed | Accepted, because the scan runs by hand. The schedule can come back ([ADR 0016](../adr/0016-run-the-scan-by-hand.md)) |
 | A CVE joins the KEV list after its issue opened | Urgency is missed | Accepted for now. The issue says its risk results can change |
 | Requests grow with the inventory, up to 2 searches per distinct product/search configuration per scan | Slow scans or rate limiting past about 100 tools | Add an API key first, then revisit [ADR 0014](../adr/0014-keep-full-product-searches.md) |
-| Slack cache is evicted or receipts are lost | Repeat notifications | Persist receipts; caches are best effort, not a durable delivery guarantee |
+| Slack cache is evicted or receipts are lost | Repeat notifications | Persist receipts; caches are best effort, not a durable delivery guarantee. GitHub evicts caches unused for 7 days, which manual scans can reach. Accepted for now |
 | Jira search indexing lags or independent scans overlap | Duplicate tickets | Workflow concurrency reduces overlap; inspect ambiguous writes before retrying |
-| Filters or disabled sources reduce coverage | Important findings can be missed | Defaults retain broad searches and unknown findings; review overrides |
-| Wrong vendor or product name in the inventory | Missed CVEs | The how-to guide shows how to look up names |
+| Filters or disabled sources reduce coverage | Important findings can be missed | Severity filters never hide known exploited CVEs. Defaults retain broad searches and unknown findings; review overrides |
+| Wrong vendor or product name in the inventory | Missed CVEs | The how-to guide shows how to look up names. A description that names the tool still opens a review issue when no analyst data exists |
+| Reporter and CPE names differ | Review issues instead of exact answers, and some false alarms | Add `tool.aliases`, or use `ignore_cves` for an unrelated product ([ADR 0025](../adr/0025-widen-reporter-name-and-status-matching.md)) |
+| Lockfile falls behind `pyproject.toml` | Scan runs other versions than declared | A test fails when they disagree ([ADR 0027](../adr/0027-lock-scan-dependencies-and-add-quality-checks.md)) |
 | A scored issue is not updated if NVD changes the score | Stale title | Accepted for simplicity. The NVD link shows the current score |
 
 [Architecture index](README.md)

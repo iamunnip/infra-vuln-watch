@@ -99,7 +99,7 @@ needs a manual check.
 | `vuln-watch` | Opened by this tool |
 | `severity-critical`, `severity-high`, `severity-medium`, `severity-low`, `severity-unknown` | The severity |
 | `tool-openbao` | The inventory item. Each tool gets its own label |
-| `needs-review` | NVD did not give enough version data to be sure |
+| `needs-review` | NVD did not give enough version data to be sure, or the reporter used another name for a tool the description mentions |
 | `known-exploited` | The CVE is on the CISA KEV list |
 
 The score has no label, because it is in the title and the severity label already groups scores.
@@ -132,7 +132,10 @@ The scan never closes or reopens an issue.
 - `@` mentions are broken so nobody gets notified.
 - `<` is escaped.
 - `github.com` links use `redirect.github.com`, which still works when clicked and adds no
-  "mentioned this" note to other projects.
+  "mentioned this" note to other projects. This covers any spelling, such as `http://`, upper case
+  or `www.`.
+- `#12`, `owner/repo#12` and `GH-12` are broken with an invisible character so they link to nothing
+  and add no note. Fragments in other URLs are left alone.
 
 ## Other destinations
 

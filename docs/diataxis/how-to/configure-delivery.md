@@ -60,7 +60,7 @@ config:
 ```
 
 This tool inherits Jira's URL, issue type and credential variable names, routes tickets to
-`PLATFORM`, filters scored findings below high severity, and disables Slack. Unknown severity
+`PLATFORM`, filters scored findings below high severity unless they are known to be exploited, and disables Slack. Unknown severity
 remains reportable unless explicitly disabled. Other tools keep their global settings.
 A separate Slack channel can be selected per tool by setting `webhook_env` to a different
 variable name and mapping that secret into the workflow environment.

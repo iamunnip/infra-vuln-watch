@@ -90,11 +90,13 @@ local delivery receipts. It still reads enabled vulnerability data sources.
 
 | Path | What it holds |
 | --- | --- |
-| `inventory/` | One YAML file per product, with versions and ownership per deployment |
+| `inventory/` | One `.yaml` or `.yml` file per product, with versions and ownership per deployment |
 | [`config.yaml`](config.yaml) | Global scan, source, delivery, notification and deadline settings |
 | `src/infra_vuln_watch/` | Packages for CLI, application, configuration, domain, clients, persistence and reporting |
 | `tests/` | Unit tests, run with `pytest` |
 | `pyproject.toml` | Project settings and dependencies |
+| `requirements.txt` | Hash-locked runtime packages installed by the scan workflow |
+| [`SECURITY.md`](SECURITY.md) | How to report a bug in this tool privately |
 | `.github/workflows/` | The scan, started by hand, and the tests |
 | [`docs/`](docs/README.md) | Human documentation: Diataxis, arc42, C4 and ADRs |
 | [`knowledge/`](knowledge/index.md) | Domain knowledge, as an OKF bundle |
@@ -145,7 +147,7 @@ which permits use, modification and redistribution subject to retaining its copy
 permission notice. No affiliation with or license to third-party trademarks is granted.
 See [third-party notices](THIRD_PARTY_NOTICES.md) for dependency licenses and data attribution.
 
-Dependabot is configured to check Python dependencies and GitHub Actions weekly once the
+The scan workflow installs hash-locked packages from `requirements.txt`. Dependabot is configured to check Python dependencies and GitHub Actions weekly once the
 configuration is merged to the default branch. Dependency alerts and automatic security
 updates also depend on the repository's GitHub security settings.
 

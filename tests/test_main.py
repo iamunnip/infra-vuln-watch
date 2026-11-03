@@ -153,7 +153,7 @@ def test_epss_is_only_requested_for_new_cves(inventory, github, monkeypatch):
 
 
 def test_config_overrides_reach_issue_body(inventory, github, monkeypatch):
-    settings = inventory / 'settings.yml'
+    settings = inventory / 'settings.conf'
     settings.write_text('fix_days:\n  high: 4\n  unknown: 10\n')
     with (inventory / 'tool.yaml').open('a') as file:
         file.write('config:\n  fix_days:\n    unknown: 3\n')
@@ -167,7 +167,7 @@ def test_config_overrides_reach_issue_body(inventory, github, monkeypatch):
 
 
 def test_invalid_config_fails_before_network(inventory, github, monkeypatch, capsys):
-    settings = inventory / 'settings.yml'
+    settings = inventory / 'settings.conf'
     settings.write_text('fix_days:\n  high: false\n')
     fetch = Mock()
     monkeypatch.setattr(nvd_client, 'fetch_cves', fetch)
@@ -204,7 +204,7 @@ def test_jira_and_slack_without_github_deduplicate_across_runs(inventory, monkey
     from infra_vuln_watch.clients import jira_client, slack_client
     import requests
 
-    settings = inventory / 'settings.yml'
+    settings = inventory / 'settings.conf'
     settings.write_text('''outputs:
   github:
     enabled: false
@@ -323,7 +323,7 @@ deployments:
   - id: staging
     version: "1.0"
 ''')
-    settings = inventory / 'settings.yml'
+    settings = inventory / 'settings.conf'
     settings.write_text('fix_days:\n  unknown: 10\n')
     monkeypatch.setattr(nvd_client, 'fetch_cves', lambda item: [make_cve('CVE-NEW', '< 2.0.0')])
     assert main.main(['--inventory', str(inventory), '--config', str(settings)]) == 0

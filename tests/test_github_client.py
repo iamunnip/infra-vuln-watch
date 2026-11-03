@@ -77,3 +77,23 @@ def test_invalid_history_page_fails_instead_of_returning_empty_history(monkeypat
     monkeypatch.setattr(github_client.requests, 'get', Mock(return_value=reply({})))
     with pytest.raises(requests.RequestException, match='invalid list response'):
         client.get_reported_ids()
+
+
+def test_labels_differing_only_by_case_are_one_label(monkeypatch, client):
+    existing = [{"name": "VULN-WATCH"}]
+    monkeypatch.setattr(github_client.requests, "get", Mock(return_value=reply(existing)))
+    post = Mock(return_value=reply({}, status=201))
+    monkeypatch.setattr(github_client.requests, "post", post)
+
+    client.create_missing_labels(["tool"], deployment_ids=["Prod", "prod"])
+
+    created = [call.kwargs["json"]["name"] for call in post.call_args_list]
+    assert "vuln-watch" not in created
+    assert [name for name in created if name.casefold() == "deployment-prod"] == ["deployment-Prod"]
+
+
+def test_remembers_the_address_of_each_reported_issue(monkeypatch, client):
+    issues = [{"body": "<!-- vuln-watch-id: a/CVE-1 -->", "html_url": "https://github.com/o/r/issues/1"}]
+    monkeypatch.setattr(github_client.requests, "get", Mock(return_value=reply(issues)))
+    client.get_reported_ids()
+    assert client.reported_links == {"a/CVE-1": "https://github.com/o/r/issues/1"}

@@ -11,8 +11,9 @@
   The inventory only changes through a pull request, so each fix leaves a record.
 - **Configuration:** defaults < global YAML < tool overrides < deployment overrides, merged recursively; lists replace.
   Invalid policy fails before networking. Credentials remain in environment variables.
-- **Failure handling:** a failed tool or destination does not stop the others, but fails the
-  run. Output errors omit credentials and webhook URLs. Source enrichment outages are warnings.
+- **Failure handling:** a failed tool, destination or malformed CVE record does not stop the
+  others, but fails the run. Output errors omit credentials and webhook URLs. Source enrichment
+  outages are warnings.
 - **Notification safety:** Slack payloads use plain-text blocks and an escaped title as fallback
   text with Markdown disabled; Jira descriptions use plain
   ADF text. Neither is built from mentions or executable markup. Secrets are referenced only

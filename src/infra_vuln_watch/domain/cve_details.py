@@ -119,7 +119,7 @@ def get_weaknesses(cve):
 
 def get_references(cve):
     """Return the reference links of a CVE as a list of {"url", "tags"}, without duplicates."""
-    found = {}
+    found: dict[str, list] = {}
     for reference in cve.get("references", []):
         url = reference.get("url", "")
         if url.startswith(("https://", "http://")):
@@ -162,3 +162,21 @@ def get_exploit_status(cve):
             status["Assessed on"] = ssvc["timestamp"][:10]
 
     return status
+
+
+def find_kev_entry(cve, kev, allow_nvd=True):
+    """Return the KEV details of a CVE, or None if it is not known to be listed.
+
+    NVD also copies these details into its records, so we can still spot a
+    listed CVE when the CISA list could not be downloaded.
+    """
+    if kev and cve["id"] in kev:
+        return kev[cve["id"]]
+    if allow_nvd and cve.get("cisaExploitAdd"):
+        return {
+            "date_added": cve["cisaExploitAdd"],
+            "due_date": cve.get("cisaActionDue", "Unknown"),
+            "required_action": cve.get("cisaRequiredAction", "Unknown"),
+            "ransomware": "Unknown",
+        }
+    return None

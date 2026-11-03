@@ -119,8 +119,13 @@ YAML cannot override it. Dry runs still read enabled vulnerability data sources.
 `min_severity` accepts `low`, `medium`, `high` or `critical`. Unknown severity is controlled
 separately by `include_unknown_severity`. `report_unknown_versions` controls whether uncertain
 version matches are reported. `ignore_cves` suppresses the listed CVE IDs. Rejected records
-and score 0.0 remain excluded. Filters also apply to known exploited findings; restrictive
-filters can suppress them before enrichment.
+and score 0.0 remain excluded.
+
+`min_severity` and `include_unknown_severity` do not apply to known exploited CVEs, so a strict
+severity filter can still produce a low-severity issue when the CVE is under attack. Known exploited
+means listed in the CISA KEV catalog, or in NVD's copy of it when `nvd_fallback` is on.
+`ignore_cves` and `report_unknown_versions` still apply to them. See
+[ADR 0026](../../adr/0026-known-exploited-cves-pass-severity-filters.md).
 
 At least one of NVD's product or keyword searches must remain enabled for an enabled tool.
 Disabling one reduces coverage. NVD's request intervals cannot be configured below 6.5 seconds

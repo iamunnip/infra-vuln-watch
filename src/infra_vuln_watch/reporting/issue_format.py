@@ -1,12 +1,12 @@
 """Write the title and description of a GitHub issue for a CVE."""
 
 from datetime import datetime, timezone
+import re
 
 from infra_vuln_watch.domain import cve_details
-from infra_vuln_watch.clients import risk_data
 from infra_vuln_watch.domain.fix_deadline import get_deadline
 from infra_vuln_watch.domain.version_check import UNKNOWN
-from infra_vuln_watch.domain.identity import finding_id, target_name
+from infra_vuln_watch.domain.identity import finding_marker, target_name
 
 # The coloured box at the top of the issue, using GitHub's alert styles.
 SEVERITY_STYLES = {
@@ -19,6 +19,12 @@ DEFAULT_STYLE = {"alert": "IMPORTANT", "dot": "⚪"}
 
 MAX_LINK_TEXT_LENGTH = 40
 
+ZERO_WIDTH_SPACE = "\u200b"
+# Any spelling of a github.com address, but not a subdomain such as redirect.github.com.
+GITHUB_ADDRESS = re.compile(r"(?<![\w.\-/])(?:https?://)?(?:www\.)?github\.com/", re.IGNORECASE)
+# A whole URL is matched first, so that an issue reference is only found outside one.
+ISSUE_REFERENCE = re.compile(r"[a-z][a-z0-9+.\-]*://\S+|\bGH-(?=\d)|#(?=\d)", re.IGNORECASE)
+
 # Reference links are shown in this order, most useful first.
 REFERENCE_TYPES = [
     ("advisor", "Security advisory"),
@@ -30,6 +36,12 @@ REFERENCE_TYPES = [
 ]
 
 
+def neutralise(text):
+    """Stop markup and GitHub links, in text or a URL, from acting on anything."""
+    text = text.replace("<", "&lt;").replace("@", f"@{ZERO_WIDTH_SPACE}")
+    return GITHUB_ADDRESS.sub("https://redirect.github.com/", text)
+
+
 def clean_text(text):
     """Make text from NVD safe to put in a GitHub issue.
 
@@ -38,20 +50,26 @@ def clean_text(text):
     - "<" could hide content or fake our marker, so we escape it.
     - Links to github.com would add a "mentioned this" note on the other
       project's issues. Renovate uses the redirect address to avoid this too.
+    - "#12", "owner/repo#12" and "GH-12" would link to issues in the same way,
+      so we break those too. Other URLs are left whole, so their fragments work.
     """
-    text = text.replace("<", "&lt;").replace("@", "@​")
-    return text.replace("https://github.com/", "https://redirect.github.com/")
+    return ISSUE_REFERENCE.sub(break_reference, neutralise(text))
+
+
+def break_reference(match):
+    """Break an issue reference with a zero width space, and leave a URL alone."""
+    return match[0] if "://" in match[0] else f"{match[0]}{ZERO_WIDTH_SPACE}"
 
 
 def safe_url(url):
     """Make a link from NVD safe to use inside a markdown link."""
     # These characters would end the link early.
-    return clean_text(url.replace(" ", "%20").replace("(", "%28").replace(")", "%29"))
+    return neutralise(url.replace(" ", "%20").replace("(", "%28").replace(")", "%29"))
 
 
 def issue_marker(item, cve):
     """Return the hidden text that lets us find this issue again on later runs."""
-    return f"<!-- vuln-watch-id: {finding_id(item, cve)} -->"
+    return finding_marker(item, cve)
 
 
 def make_title(item, cve):
@@ -302,7 +320,7 @@ def make_body(item, cve, result, risk=None, opened_on=None):
     """
     score = cve_details.get_score(cve)
     risk = risk or {"epss": None, "kev": None}
-    kev_entry = risk_data.find_kev_entry(cve, risk["kev"], allow_nvd=risk.get("allow_nvd_kev", True))
+    kev_entry = cve_details.find_kev_entry(cve, risk["kev"], allow_nvd=risk.get("allow_nvd_kev", True))
     if opened_on is None:
         opened_on = datetime.now(timezone.utc).date()
     deadline = get_deadline(

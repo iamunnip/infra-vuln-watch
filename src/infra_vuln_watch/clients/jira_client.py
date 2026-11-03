@@ -5,7 +5,7 @@ import time
 
 import requests
 
-MARKER = re.compile(r'<!-- vuln-watch-id: (\S+) -->')
+from infra_vuln_watch.domain.identity import MARKER_PATTERN
 
 
 def adf_text(value):
@@ -34,13 +34,14 @@ class JiraClient:
         self.base_url = config['base_url'].rstrip('/')
         self.auth = (email, token)
         self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+        self.reported_links = {}
 
     def get_reported_ids(self):
         reported = set()
         token = None
         seen_tokens = set()
         while True:
-            params = {'jql': f'project = "{self.config["project"]}" AND labels = "vuln-watch"',
+            params: dict = {'jql': f'project = "{self.config["project"]}" AND labels = "vuln-watch"',
                       'fields': 'description', 'maxResults': 100}
             if token:
                 params['nextPageToken'] = token
@@ -53,7 +54,10 @@ class JiraClient:
                 if not isinstance(issues, list) or type(page['isLast']) is not bool:
                     raise ValueError('invalid Jira search response')
                 for issue in issues:
-                    reported.update(MARKER.findall(adf_text(issue['fields'].get('description'))))
+                    for marker in MARKER_PATTERN.findall(adf_text(issue['fields'].get('description'))):
+                        reported.add(marker)
+                        if issue.get('key'):
+                            self.reported_links[marker] = f"{self.base_url}/browse/{issue['key']}"
                 if page['isLast']:
                     return reported
                 token = page.get('nextPageToken')

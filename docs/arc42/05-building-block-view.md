@@ -31,11 +31,11 @@ The package lives in `src/infra_vuln_watch/`, with tests in `tests/`. See
 | `clients/jira_client.py` | Reads Jira Cloud reporting history and creates tickets using REST v3 |
 | `clients/slack_client.py` | Sends plain-text Slack webhook payloads and records delivery |
 | `configuration/inventory.py` | Normalises grouped tool metadata, validates files and expands deployment-specific targets |
-| `domain/identity.py` | Defines stable scan target IDs, finding IDs and scoped display names |
+| `domain/identity.py` | Defines stable scan target IDs, finding IDs, the shared ticket marker and scoped display names |
 | `clients/nvd_client.py` | Downloads CVEs, with paging, waiting and retries |
-| `domain/version_check.py` | Decides affected, not affected or unknown, and finds the fix |
+| `domain/version_check.py` | Decides affected, not affected or unknown using names, aliases and reporter statuses, and finds the fix |
 | `domain/cve_details.py` | Pulls the score, description and links out of a CVE |
-| `clients/risk_data.py` | Downloads EPSS scores and the CISA KEV list |
+| `clients/risk_data.py` | Downloads EPSS scores and the CISA KEV list; `domain/cve_details.py` reads a CVE's KEV entry |
 | `domain/fix_deadline.py` | Works out the fix date from the severity |
 | `reporting/issue_format.py` | Writes the issue title and body, and cleans NVD text |
 | `clients/github_client.py` | Creates labels and issues, and lists what is already reported |

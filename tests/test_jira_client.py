@@ -76,3 +76,11 @@ def test_create_failure_is_not_automatically_retried(monkeypatch, client):
     with pytest.raises(requests.RequestException):
         client.create_issue('title', 'body', [])
     assert post.call_count == 1
+
+
+def test_remembers_the_address_of_each_reported_ticket(monkeypatch, client):
+    description = jira_client.description_document('<!-- vuln-watch-id: tool/CVE-1 -->')
+    page = {'issues': [{'key': 'SEC-7', 'fields': {'description': description}}], 'isLast': True}
+    monkeypatch.setattr(jira_client.requests, 'get', Mock(return_value=response(page)))
+    client.get_reported_ids()
+    assert client.reported_links == {'tool/CVE-1': 'https://example.atlassian.net/browse/SEC-7'}

@@ -3,10 +3,11 @@
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 import requests
 
-from infra_vuln_watch.clients import github_client, jira_client, slack_client, risk_data
+from infra_vuln_watch.clients import github_client, jira_client, slack_client
 from infra_vuln_watch.domain import cve_details
 from infra_vuln_watch.reporting import issue_format
 from infra_vuln_watch.persistence.state import DeliveryState
@@ -24,7 +25,7 @@ def required_env(name):
 class OutputRouter:
     def __init__(self, items, dry_run=False):
         self.routes = {}
-        trackers = {}
+        trackers: dict[tuple[str, str], dict] = {}
         slacks = {}
         states = {}
         for item in items:
@@ -38,19 +39,19 @@ class OutputRouter:
                 settings = config['outputs'][kind]
                 if not settings['enabled']:
                     continue
-                key = (kind, json.dumps(settings))
-                if key not in trackers:
+                tracker_key = (kind, json.dumps(settings))
+                if tracker_key not in trackers:
                     if kind == 'github':
                         repository = settings['repository'] or required_env('GITHUB_REPOSITORY')
-                        client = github_client.GitHubClient(required_env(settings['token_env']), repository, config=settings)
+                        client: Any = github_client.GitHubClient(required_env(settings['token_env']), repository, config=settings)
                     else:
                         client = jira_client.JiraClient(required_env(settings['email_env']),
                                                        required_env(settings['token_env']), settings)
-                    trackers[key] = {'kind': kind, 'client': client, 'reported': set(), 'tools': [], 'deployments': []}
-                trackers[key]['tools'].append(item['name'])
+                    trackers[tracker_key] = {'kind': kind, 'client': client, 'reported': set(), 'tools': [], 'deployments': []}
+                trackers[tracker_key]['tools'].append(item['name'])
                 if item.get('deployment_id'):
-                    trackers[key]['deployments'].append(item['deployment_id'])
-                route['trackers'].append(trackers[key])
+                    trackers[tracker_key]['deployments'].append(item['deployment_id'])
+                route['trackers'].append(trackers[tracker_key])
             settings = config['notifications']['slack']
             if settings['enabled']:
                 key = json.dumps(settings)
@@ -104,13 +105,17 @@ class OutputRouter:
             labels.append(github_client.deployment_label(item['deployment_id']))
         if result['status'] == UNKNOWN:
             labels.append(github_client.REVIEW_LABEL)
-        if risk_data.find_kev_entry(cve, risk['kev'], allow_nvd=risk.get('allow_nvd_kev', True)):
+        if cve_details.find_kev_entry(cve, risk['kev'], allow_nvd=risk.get('allow_nvd_kev', True)):
             labels.append(github_client.KNOWN_EXPLOITED_LABEL)
         body = issue_format.make_body(item, cve, result, risk)
         links = [f"https://nvd.nist.gov/vuln/detail/{cve['id']}"]
         success = True
         for tracker in route['trackers']:
             if marker in tracker['reported']:
+                # A retried Slack notification should still point at the existing ticket.
+                existing = tracker['client'].reported_links.get(marker)
+                if existing:
+                    links.append(existing)
                 continue
             try:
                 url = tracker['client'].create_issue(title, body, labels)

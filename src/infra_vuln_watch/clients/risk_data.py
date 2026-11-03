@@ -17,9 +17,6 @@ from infra_vuln_watch.configuration.config import DEFAULT_CONFIG
 
 EPSS_URL = "https://api.first.org/data/v1/epss"
 KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
-EPSS_BATCH_SIZE = 100
-MAX_ATTEMPTS = 3
-RETRY_WAIT_SECONDS = 5
 HEADERS = {"User-Agent": "infra-vuln-watch"}
 
 
@@ -79,21 +76,3 @@ def fetch_kev(config=None):
     except (requests.RequestException, KeyError, TypeError) as error:
         print(f"  WARNING: could not read the CISA KEV list: {error}")
         return None
-
-
-def find_kev_entry(cve, kev, allow_nvd=True):
-    """Return the KEV details of a CVE, or None if it is not known to be listed.
-
-    NVD also copies these details into its records, so we can still spot a
-    listed CVE when the CISA list could not be downloaded.
-    """
-    if kev and cve["id"] in kev:
-        return kev[cve["id"]]
-    if allow_nvd and cve.get("cisaExploitAdd"):
-        return {
-            "date_added": cve["cisaExploitAdd"],
-            "due_date": cve.get("cisaActionDue", "Unknown"),
-            "required_action": cve.get("cisaRequiredAction", "Unknown"),
-            "ransomware": "Unknown",
-        }
-    return None

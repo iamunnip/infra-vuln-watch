@@ -1,5 +1,9 @@
 """Stable scan and finding identities independent of installed version."""
 
+import re
+
+MARKER_PATTERN = re.compile(r'<!-- vuln-watch-id: (\S+) -->')
+
 
 def inventory_id(item):
     deployment = item.get('deployment_id')
@@ -8,6 +12,11 @@ def inventory_id(item):
 
 def finding_id(item, cve):
     return f"{inventory_id(item)}/{cve['id']}"
+
+
+def finding_marker(item, cve):
+    """Return the hidden text that lets us find this finding's ticket on later runs."""
+    return f"<!-- vuln-watch-id: {finding_id(item, cve)} -->"
 
 
 def target_name(item):

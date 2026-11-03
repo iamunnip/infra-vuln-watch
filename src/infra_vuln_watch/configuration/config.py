@@ -1,18 +1,21 @@
 """Validated global settings and recursively merged per-tool overrides."""
 
 from copy import deepcopy
+import json
 from pathlib import Path
 import re
+from typing import Any
 from urllib.parse import urlsplit
 
 import yaml
 
-DEFAULT_CONFIG = {
+DEFAULT_CONFIG: dict[str, Any] = {
     "fix_days": {"critical": 2, "high": 7, "medium": 14, "low": 21,
                  "unknown": None, "known_exploited": 2},
     "scan": {"enabled": True, "dry_run": False, "min_severity": "low",
              "include_unknown_severity": True, "report_unknown_versions": True, "ignore_cves": []},
     "sources": {
+        # NVD allows 5 requests per 30 seconds, or 50 per 30 seconds with an API key.
         "nvd": {"product_search": True, "keyword_search": True, "timeout": 60,
                 "max_attempts": 5, "retry_wait": 30,
                 "interval_without_key": 6.5, "interval_with_key": 0.7, "api_key_env": "NVD_API_KEY"},
@@ -54,7 +57,6 @@ def _validate(value, defaults, path):
             if {'project', 'issuetype', 'summary', 'description', 'labels'} & setting.keys():
                 raise ValueError(f"{location}: cannot replace project, issuetype, summary, description or labels")
             # Only JSON-compatible values may reach the Jira request.
-            import json
             try:
                 json.dumps(setting, allow_nan=False)
             except (TypeError, ValueError) as error:
