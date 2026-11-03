@@ -59,3 +59,8 @@ installed version, owner and fix date in the finding details.
 The project shares the title across GitHub, Jira Cloud and Slack. Slack uses plain-text blocks
 and an escaped title for notification fallback text. Presentation changes do not change finding
 identities, migrate earlier tickets or automatically rename them.
+
+For heading display, this project abbreviates `production` as `PROD`, ignoring case. This does
+not rename the deployment or stored environment. Inventory values, detail tables, ticket labels
+and deduplication markers retain their original identities; a shorter title must not create a
+new finding.

@@ -15,15 +15,17 @@
 | Tool | `OpenBao` | `display_name`, with environment/deployment scope when configured |
 | summary | | Up to 120 characters from the CVE description |
 
-[ADR 0023](../../adr/0023-prioritise-environment-in-finding-titles.md) records the current title
-format. [ADR 0009](../../adr/0009-issue-title-and-labels.md) records the original label conventions.
+[ADR 0023](../../adr/0023-prioritise-environment-in-finding-titles.md) records the title format,
+with the `PROD` alias added by [ADR 0024](../../adr/0024-abbreviate-production-in-titles.md). [ADR 0009](../../adr/0009-issue-title-and-labels.md) records the original label conventions.
 
 ```text
 [HIGH] [STAGE] [7.1] CVE-2026-12345 OpenBao - short vulnerability summary
 [HIGH] [STAGE/stage-eu] [7.1] CVE-2026-12345 OpenBao - short vulnerability summary
 ```
 
-Severity and environment come first for compact lists. The CVE ID has no brackets. The product
+Severity and environment come first for compact lists. `production` is displayed as `PROD`
+(case-insensitive); other environment names are uppercased. This is a presentation alias:
+inventory values, details, deployment labels and identity markers stay unchanged. The CVE ID has no brackets. The product
 name appears once, without a trailing environment suffix. Missing scores appear as `[n/a]`.
 The summary is capped at 120 characters; output clients apply their title-length limits.
 
@@ -143,7 +145,7 @@ See [delivery setup](../how-to/configure-delivery.md).
 
 ## Deployment scope
 
-For a deployment, the prefix includes `[PRODUCTION/prod-eu]` (or `[PRODUCTION]`
+For a deployment, the prefix includes `[PROD/prod-eu]` (or `[PROD]`
 when environment and ID match, ignoring case). The details identify deployment, environment,
 installed version, team and owner. Fix steps name the exact deployment version to update.
 The identity marker is `tool/deployment-id/CVE`, and tickets receive a `deployment-ID` label.

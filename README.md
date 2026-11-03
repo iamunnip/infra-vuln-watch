@@ -14,11 +14,12 @@ When you start it, a GitHub Action checks each tool in `inventory/`, one scan at
 is affected, it opens an issue in this repo:
 
 ```text
-[LOW] [PRODUCTION] [2.1] CVE-2026-115363 openbao - OpenBao 2.2.0 before 2.6.4 ... contains an information disclosure...
+[LOW] [PROD] [2.1] CVE-2026-115363 openbao - OpenBao 2.2.0 before 2.6.4 ... contains an information disclosure...
 ```
 
 The parts are `[SEVERITY] [ENVIRONMENT/deployment] [CVSS score] CVE-id Tool - summary`.
-The environment is uppercase; a distinct deployment ID follows it when needed. Single-version
+Environment labels are uppercase, with `production` displayed as `PROD`; a distinct deployment
+ID follows when needed. Single-version
 records omit the environment segment. Brackets are visual separators, not coloured badges.
 The description holds the full details and the fix.
 

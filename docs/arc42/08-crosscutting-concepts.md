@@ -25,5 +25,6 @@
   routing and presentation. Product metadata and NVD keyword remain shared across deployments.
 
 - **Heading visibility:** a shared formatter puts severity, uppercase environment/deployment,
-  score and unbracketed CVE ID before the tool and summary. Labels remain separate. Rendering
+  score and unbracketed CVE ID before the tool and summary. The title aliases `production`
+  to `PROD` without changing stored scope. Labels remain separate. Rendering
   changes do not alter identity markers or modify existing tickets.

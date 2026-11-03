@@ -63,7 +63,7 @@ def make_title(item, cve):
     if item.get('deployment_id'):
         environment = item['environment']
         deployment = item['deployment_id']
-        scope = environment.upper()
+        scope = 'PROD' if environment.casefold() == 'production' else environment.upper()
         if environment.casefold() != deployment.casefold():
             scope += f'/{deployment}'
         parts.append(f'[{clean_text(scope)}]')
