@@ -14,7 +14,7 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0006](0006-use-the-python-src-layout.md) | Use the Python src layout | Accepted |
 | [0007](0007-scan-twice-a-day.md) | Scan twice a day | Replaced by [0016](0016-run-the-scan-by-hand.md) |
 | [0008](0008-issue-title-format.md) | Issue title format | Replaced by [0009](0009-issue-title-and-labels.md) |
-| [0009](0009-issue-title-and-labels.md) | Issue title and labels | Accepted |
+| [0009](0009-issue-title-and-labels.md) | Issue title and labels | Title format replaced by [0023](0023-prioritise-environment-in-finding-titles.md); labels retained |
 | [0010](0010-fix-deadlines-by-severity.md) | Fix deadlines by severity | Configuration amended by [0019](0019-layer-source-and-configure-scans-and-delivery.md) |
 | [0011](0011-severity-comes-from-the-score.md) | Severity comes from the CVSS score | Accepted |
 | [0012](0012-add-epss-and-cisa-kev.md) | Add EPSS and CISA KEV | Accepted |
@@ -27,3 +27,5 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0019](0019-layer-source-and-configure-scans-and-delivery.md) | Layer source modules and configure scans and delivery | Accepted |
 | [0020](0020-group-source-by-responsibility.md) | Group source modules by responsibility | Accepted |
 | [0021](0021-track-deployments-independently.md) | Track deployments independently | Accepted |
+| [0022](0022-group-inventory-product-metadata.md) | Group inventory product metadata | Accepted |
+| [0023](0023-prioritise-environment-in-finding-titles.md) | Prioritise environment in finding titles | Accepted |

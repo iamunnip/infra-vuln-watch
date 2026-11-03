@@ -20,7 +20,7 @@ RESULT = {"status": "affected", "fix": "version 2.6.0 or later", "affected_versi
 
 def test_title_format():
     title = issue_format.make_title(ITEM, CVE)
-    assert title.startswith("[LOW] [2.1] [CVE-2026-1234] OpenBao - Before 2.6.0 it leaks keys")
+    assert title.startswith("[LOW] [2.1] CVE-2026-1234 OpenBao - Before 2.6.0 it leaks keys")
 
 
 def test_body_has_fix_marker_and_safe_text():
@@ -222,7 +222,7 @@ def test_deployment_finding_shows_scope_ownership_and_stable_marker():
     cve = {'id': 'CVE-2026-1234'}
     result = {'status': 'affected', 'fix': None, 'affected_versions': []}
     assert inventory_id(item) == 'openbao/prod-eu'
-    assert 'OpenBao [production/prod-eu]' in issue_format.make_title(item, cve)
+    assert issue_format.make_title(item, cve).startswith('[UNKNOWN] [PRODUCTION/prod-eu] [n/a] CVE-2026-1234 OpenBao -')
     body = issue_format.make_body(item, cve, result)
     assert '| Deployment | prod-eu |' in body
     assert '| Environment | production |' in body
@@ -231,3 +231,19 @@ def test_deployment_finding_shows_scope_ownership_and_stable_marker():
     assert '<!-- vuln-watch-id: openbao/prod-eu/CVE-2026-1234 -->' in body
     changed_version = {**item, 'version': '2.6.4'}
     assert issue_format.issue_marker(changed_version, cve) == issue_format.issue_marker(item, cve)
+
+
+@pytest.mark.parametrize('environment, deployment, expected', [
+    ('stage', 'stage', '[STAGE]'),
+    ('STAGE', 'stage', '[STAGE]'),
+    ('production', 'prod-eu', '[PRODUCTION/prod-eu]'),
+    ('stage', 'stage-eu', '[STAGE/stage-eu]'),
+    ('stage', 'stage-us', '[STAGE/stage-us]'),
+])
+def test_title_prioritises_environment_and_disambiguates_deployments(environment, deployment, expected):
+    item = {**ITEM, 'environment': environment, 'deployment_id': deployment}
+    title = issue_format.make_title(item, CVE)
+    assert title.startswith(f'[LOW] {expected} [2.1] CVE-2026-1234 OpenBao - ')
+    assert '[CVE-2026-1234]' not in title
+    assert 'OpenBao [' not in title
+    assert '@someone' not in title

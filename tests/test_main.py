@@ -279,7 +279,7 @@ deployments:
     fetch.assert_called_once()
     github.create_issue.assert_called_once()
     title, body, labels = github.create_issue.call_args.args
-    assert 'staging' in title
+    assert '[STAGING]' in title
     assert 'stage-owner' in body
     assert 'tool/staging/CVE-NEW' in body
     assert 'deployment-staging' in labels
@@ -301,7 +301,7 @@ deployments:
     monkeypatch.setattr(nvd_client, 'fetch_cves', lambda item: [make_cve('CVE-NEW', '< 2.0.0')])
     assert main.main() == 0
     github.create_issue.assert_called_once()
-    assert 'production' in github.create_issue.call_args.args[0]
+    assert '[PRODUCTION]' in github.create_issue.call_args.args[0]
 
 
 def test_global_tool_deployment_config_precedence_reaches_delivery(inventory, github, monkeypatch):

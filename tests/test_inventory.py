@@ -146,3 +146,43 @@ def test_invalid_deployment_is_a_clean_validation_error(tmp_path, text, message)
 def test_environment_defaults_to_stable_deployment_id(tmp_path):
     write(tmp_path, MULTI.replace('    environment: production\n', ''))
     assert load_inventory(tmp_path)[0]['environment'] == 'prod-eu'
+
+
+def test_grouped_metadata_preserves_targets_and_finding_ids(tmp_path):
+    from textwrap import indent
+    from infra_vuln_watch.domain.identity import inventory_id
+    path = write(tmp_path, MULTI)
+    legacy = load_inventory(tmp_path)
+    metadata, remainder = MULTI.split('config:', 1)
+    path.write_text('tool:\n' + indent(metadata, '  ') + 'config:' + remainder)
+    grouped = load_inventory(tmp_path)
+    assert grouped == legacy
+    assert [inventory_id(item) for item in grouped] == ['openbao/prod-eu', 'openbao/stage']
+
+
+def test_grouped_single_version_record(tmp_path):
+    text = '''tool:
+  name: a
+  repo: o/a
+  vendor: o
+  product: a
+  team: sre
+  owner: me
+version: "1.2.3"
+'''
+    item = load_item(write(tmp_path, text))
+    assert item['name'] == 'a'
+    assert item['version'] == '1.2.3'
+    assert item['owner'] == 'me'
+
+
+@pytest.mark.parametrize('text, message', [
+    ('tool: null\n', 'tool must be a mapping'),
+    ('tool: []\n', 'tool must be a mapping'),
+    ('tool: {}\nname: a\n', 'do not mix'),
+    ('tool:\n  typo: a\n', 'unknown tool fields'),
+    ('tool: {}\nsettings: {}\n', 'unknown inventory sections'),
+])
+def test_invalid_grouped_sections_fail_cleanly(tmp_path, text, message):
+    with pytest.raises(ValueError, match=message):
+        load_item(write(tmp_path, text))

@@ -14,7 +14,7 @@ Start with [README.md](README.md), then the [documentation index](docs/README.md
 - `docs/adr/`: historical decisions. Add a new ADR for significant changes and update the
   index with links to replacements; preserve the original accepted decision's content.
 - `src/infra_vuln_watch/`: Python CLI implementation; `tests/`: pytest tests.
-- `inventory/`: product records with either a single version or deployment-specific versions,
+- `inventory/`: grouped `tool` metadata alongside `config` and either `version` or `deployments`,
   ownership and overrides. OpenBao production/staging entries are illustrative demo data.
 
 ## Making changes

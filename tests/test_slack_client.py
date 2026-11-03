@@ -40,6 +40,8 @@ def test_receipts_persist_without_webhook_secret(monkeypatch, settings):
     payload = post.call_args.kwargs['json']
     assert payload['blocks'][0]['text']['type'] == 'plain_text'
     assert '<!channel>' not in payload['text']
+    assert payload['text'] == 'CVE with &lt;!channel&gt; text'
+    assert payload['mrkdwn'] is False
     assert post.call_args.kwargs['allow_redirects'] is False
 
 

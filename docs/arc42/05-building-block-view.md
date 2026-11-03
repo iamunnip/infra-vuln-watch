@@ -30,7 +30,7 @@ The package lives in `src/infra_vuln_watch/`, with tests in `tests/`. See
 | `application/router.py` | Routes each finding independently to configured trackers and Slack |
 | `clients/jira_client.py` | Reads Jira Cloud reporting history and creates tickets using REST v3 |
 | `clients/slack_client.py` | Sends plain-text Slack webhook payloads and records delivery |
-| `configuration/inventory.py` | Validates tool files and expands deployment-specific scan targets |
+| `configuration/inventory.py` | Normalises grouped tool metadata, validates files and expands deployment-specific targets |
 | `domain/identity.py` | Defines stable scan target IDs, finding IDs and scoped display names |
 | `clients/nvd_client.py` | Downloads CVEs, with paging, waiting and retries |
 | `domain/version_check.py` | Decides affected, not affected or unknown, and finds the fix |
@@ -110,3 +110,7 @@ NVD candidates are cached in memory by vendor, product, keyword and source setti
 matched separately. Route keys, tracker markers and Slack receipts use the shared identity
 helpers, so different deployments of one product cannot overwrite each other's routes.
 See [ADR 0021](../adr/0021-track-deployments-independently.md).
+
+The recommended inventory groups product metadata under `tool`, alongside `config` and
+`deployments`. Normalisation preserves the existing internal target shape and finding IDs;
+legacy flat documents remain supported. See [ADR 0022](../adr/0022-group-inventory-product-metadata.md).

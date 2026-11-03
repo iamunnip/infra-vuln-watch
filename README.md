@@ -14,11 +14,13 @@ When you start it, a GitHub Action checks each tool in `inventory/`, one scan at
 is affected, it opens an issue in this repo:
 
 ```text
-[LOW] [2.1] [CVE-2026-115363] OpenBao - OpenBao 2.2.0 before 2.6.4 ... contains an information disclosure...
+[LOW] [PRODUCTION] [2.1] CVE-2026-115363 openbao - OpenBao 2.2.0 before 2.6.4 ... contains an information disclosure...
 ```
 
-The parts are `[SEVERITY] [CVSS score] [CVE id] Tool - summary`. The description holds the
-full details and the fix.
+The parts are `[SEVERITY] [ENVIRONMENT/deployment] [CVSS score] CVE-id Tool - summary`.
+The environment is uppercase; a distinct deployment ID follows it when needed. Single-version
+records omit the environment segment. Brackets are visual separators, not coloured badges.
+The description holds the full details and the fix.
 
 GitHub Issues is the default destination. You can also create **Jira Cloud tickets**, send
 **Slack incoming webhook notifications**, or use console-only output. Configure these globally

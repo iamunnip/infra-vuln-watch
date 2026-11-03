@@ -13,17 +13,18 @@
 2. Create `inventory/vault.yaml`:
 
    ```yaml
-   name: vault
-   repo: hashicorp/vault
+   tool:
+     name: vault
+     repo: hashicorp/vault
+     team: sre
+     owner: your-github-name
+     vendor: hashicorp
+     product: vault
    version: "1.15.0"
-   team: sre
-   owner: your-github-name
-   vendor: hashicorp
-   product: vault
    ```
 
    Keep the quotes around the version. See the [inventory format](../reference/inventory-format.md).
-   Optionally add a `config` mapping alongside those fields to override global scan, source,
+   Optionally add a `config` mapping alongside `tool` and `version` to override global scan, source,
    deadline, ticket or notification settings for this tool. Use `config: {}` to inherit
    everything. The [OpenBao inventory](../../../inventory/openbao.yaml) has a complete active configuration;
    [configuration](../reference/configuration.md) lists all supported settings.

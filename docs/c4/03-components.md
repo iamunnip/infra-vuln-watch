@@ -18,7 +18,7 @@ flowchart TD
         cli["cli/main.py — CLI<br/>Parses options; prepares validated tool settings"]
         config["configuration/config.py — Configuration<br/>Validates and merges global and tool settings"]
         main["application/scanner.py — Orchestration<br/>Filters and enriches findings; isolates failures"]
-        inventory["configuration/inventory.py — Inventory loader<br/>Validates YAML and expands deployment targets"]
+        inventory["configuration/inventory.py — Inventory loader<br/>Normalises tool metadata, validates YAML and expands deployments"]
         nvd["clients/nvd_client.py — CVE retrieval<br/>Configured searches, paging and retries; reused per scan"]
         identity["domain/identity.py — Finding identity<br/>Stable tool/deployment keys and scoped names"]
         check["domain/version_check.py — Version matching<br/>Affected, not affected or unknown; fix guidance"]
