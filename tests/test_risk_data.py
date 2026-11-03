@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 import requests
 
-from infra_vuln_watch import risk_data
+from infra_vuln_watch.clients import risk_data
 
 
 def reply(data=None, status=200):
@@ -75,3 +75,17 @@ def test_nvd_copy_is_used_when_the_cisa_list_is_down():
 
 def test_not_listed_anywhere():
     assert risk_data.find_kev_entry({"id": "CVE-1"}, {}) is None
+
+
+def test_disabled_sources_make_no_requests(monkeypatch):
+    from infra_vuln_watch.configuration.config import merge_config
+    config = merge_config({}, {'sources': {'epss': {'enabled': False}, 'kev': {'enabled': False}}})
+    get = Mock()
+    monkeypatch.setattr(risk_data.requests, 'get', get)
+    assert risk_data.fetch_epss(['CVE-1'], config=config['sources']['epss']) is None
+    assert risk_data.fetch_kev(config=config['sources']['kev']) is None
+    get.assert_not_called()
+
+
+def test_nvd_kev_fallback_can_be_disabled():
+    assert risk_data.find_kev_entry({'id': 'CVE-1', 'cisaExploitAdd': '2026-01-02'}, None, allow_nvd=False) is None

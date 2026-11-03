@@ -5,7 +5,7 @@ description: How long a team has to fix a vulnerability, based on its CVSS sever
 tags: [policy, severity, deadlines]
 ---
 
-# Windows
+# Default windows
 
 | Severity | CVSS score | Fix window |
 | --- | --- | --- |
@@ -18,6 +18,15 @@ tags: [policy, severity, deadlines]
 
 - The window starts when the issue opens, not when the CVE was published.
 - Issues show a date and not a time, so critical uses the 48 hour limit.
-- A CVE on the CISA KEV list always gets the critical window, whatever its score. See
+- By default a CVE on the CISA KEV list gets a separate 2 day window, whatever its score. See
   [CVSS, EPSS and KEV](/vulnerability-data/cvss-epss-kev.md).
-- Otherwise a CVE with no score has no window, and a score of 0.0 gets no issue.
+- By default, otherwise a CVE with no score has no window, and a score of 0.0 gets no issue.
+
+# Policy overrides
+
+The table describes defaults rather than universal deadlines. Global `config.yaml` settings
+can be overridden for each inventory tool under `config.fix_days`. Overrides merge per
+severity. Known exploitation uses its own `known_exploited` value, independently of `critical`.
+Deadlines count calendar days from the UTC issue-open date, and changes affect new issues only.
+Unscored CVEs can be given an `unknown` deadline; `null` keeps no deadline. See the
+[configuration reference](../../docs/diataxis/reference/configuration.md) for the supported schema.

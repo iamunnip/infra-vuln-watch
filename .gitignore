@@ -6,3 +6,11 @@ dist/
 .pytest_cache/
 .venv/
 .env
+.env.*
+!.env.example
+.aws/
+*.pem
+*.key
+
+# Local delivery receipts; never store webhook secrets here.
+.vuln-watch/

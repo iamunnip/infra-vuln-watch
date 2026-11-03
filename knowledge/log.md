@@ -1,5 +1,15 @@
 # Directory Update Log
 
+## 2026-11-03
+* **Update**: Documented multi-deployment [OpenBao inventory](/products/openbao.md), distinct versions and ownership, and explicit tool configuration.
+* **Update**: Added deployment scope to [finding delivery](/policies/finding-delivery.md) and [remediation](/policies/vulnerability-fix-process.md).
+* **Update**: Clarified in-memory search reuse for deployments in the [NVD CVE API](/vulnerability-data/nvd-cve-api.md).
+* **Update**: Clarified that [OpenBao inventory settings](/products/openbao.md) configure the scanner, not the OpenBao service.
+* **Creation**: Added [finding delivery](/policies/finding-delivery.md) covering independent destinations, receipts, ambiguous writes and filtering coverage.
+* **Update**: Clarified default and configurable [fix windows](/policies/fix-windows.md), including independent known exploitation deadlines.
+* **Update**: Documented conservative fix guidance for unbounded ranges in [NVD record shapes](/vulnerability-data/nvd-record-shapes.md).
+* **Update**: Documented incomplete-page failures in the [NVD CVE API](/vulnerability-data/nvd-cve-api.md).
+
 ## 2026-11-02
 * **Update**: Noted that only one scan runs at a time in the [NVD CVE API](/vulnerability-data/nvd-cve-api.md).
 * **Creation**: Added [CVE.org and NVD](/vulnerability-data/cve-org-vs-nvd.md).

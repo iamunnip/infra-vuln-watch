@@ -2,6 +2,6 @@
 
 import sys
 
-from infra_vuln_watch.main import main
+from infra_vuln_watch.cli.main import main
 
 sys.exit(main())

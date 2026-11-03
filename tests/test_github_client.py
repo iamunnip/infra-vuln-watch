@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 import requests
 
-from infra_vuln_watch import github_client
+from infra_vuln_watch.clients import github_client
 
 
 def reply(data=None, status=200):
@@ -71,3 +71,9 @@ def test_github_errors_are_raised(monkeypatch, client):
     monkeypatch.setattr(github_client.requests, "post", Mock(return_value=reply({}, status=403)))
     with pytest.raises(requests.HTTPError):
         client.create_issue("title", "body", [])
+
+
+def test_invalid_history_page_fails_instead_of_returning_empty_history(monkeypatch, client):
+    monkeypatch.setattr(github_client.requests, 'get', Mock(return_value=reply({})))
+    with pytest.raises(requests.RequestException, match='invalid list response'):
+        client.get_reported_ids()

@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from infra_vuln_watch.fix_deadline import get_deadline
+from infra_vuln_watch.domain.fix_deadline import get_deadline
 
 OPENED = date(2026, 11, 2)
 

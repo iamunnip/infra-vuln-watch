@@ -4,6 +4,11 @@
 
 CVE scan of infrastructure inventory.
 
+This is an independent community project, unaffiliated with NIST, NVD, FIRST or CISA.
+It retrieves and uses vulnerability data from the National Vulnerability Database (NVD)
+through the NVD API. Version matching and generated findings are this project's own analysis.
+This product uses the NVD API but is not endorsed or certified by the NVD.
+
 When you start it, a GitHub Action checks each tool in `inventory/`, one scan at a time, against the
 [National Vulnerability Database](https://nvd.nist.gov/) (NVD). When the installed version
 is affected, it opens an issue in this repo:
@@ -15,18 +20,26 @@ is affected, it opens an issue in this repo:
 The parts are `[SEVERITY] [CVSS score] [CVE id] Tool - summary`. The description holds the
 full details and the fix.
 
-The inventory uses OpenBao 2.5.5 as a demo. It is kept old on purpose so the tool has real CVEs
-to find, and it is not a real deployment.
+GitHub Issues is the default destination. You can also create **Jira Cloud tickets**, send
+**Slack incoming webhook notifications**, or use console-only output. Configure these globally
+in [`config.yaml`](config.yaml) and override them for individual inventory tools. See
+[delivery setup](docs/diataxis/how-to/configure-delivery.md) and the
+[complete configuration reference](docs/diataxis/reference/configuration.md).
+
+The OpenBao inventory demonstrates production and staging with versions 2.5.5 and 2.6.4.
+These are demo records, not real deployments or secure-version recommendations. Each deployment
+can have its own version, team, owner and configuration; findings are tracked separately.
+See the [inventory format](docs/diataxis/reference/inventory-format.md).
 
 Each issue also shows:
 
 - **Risk:** CVSS for severity, EPSS for the chance of an attack, and CISA KEV for known attacks.
-- **A fix date:** based on severity, from 48 hours for critical to 21 days for low. Known exploited
-  CVEs always get 48 hours.
+- **A fix date:** based on severity, by default, from 2 days for critical to 21 days for low. Known exploited
+  CVEs default to 2 days. [Configure deadlines globally, per tool or per deployment](docs/diataxis/reference/configuration.md).
 - **Who is responsible:** the team and owner from the inventory.
 - **Labels:** `severity-*`, `tool-*`, and `known-exploited` or `needs-review` when they apply.
 
-See the [issue format](docs/reference/issue-format.md) for the full details.
+See the [issue format](docs/diataxis/reference/issue-format.md) for the full details.
 
 ## Why not just ask NVD for my version?
 
@@ -39,21 +52,23 @@ have yet. On 2026-11-02, for OpenBao 2.5.5:
 | This tool | 16, including 1 critical and 2 high |
 
 This tool runs two broader searches and compares versions itself, so it also catches CVEs that
-NVD has not analysed. [ADR 0002](adr/0002-search-nvd-twice-and-compare-versions-locally.md) has
+NVD has not analysed. [ADR 0002](docs/adr/0002-search-nvd-twice-and-compare-versions-locally.md) has
 the full reasoning.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    start[Run by hand in GitHub Actions] --> scan["infra_vuln_watch"]
-    inventory["inventory/*.yaml"] --> scan
-    nvd[NVD CVE API] --> scan
-    scan --> check{Installed version affected?}
-    check -->|No| skip[Nothing to do]
-    check -->|Yes or unsure| reported{Already reported?}
-    reported -->|Yes| skip
-    reported -->|No| issue[Open GitHub issue]
+    start[Manual workflow or local CLI] --> scan[Scanner]
+    inventory[Inventory and merged configuration] --> scan
+    sources[NVD and enabled risk sources] --> scan
+    scan --> selected{Selected finding?}
+    selected -->|No| skip[Skip]
+    selected -->|Yes| route[Independent configured destinations]
+    route --> github[GitHub issue if not previously reported]
+    route --> jira[Jira Cloud ticket if not previously reported]
+    route --> slack[Slack notification if receipt is absent or repeat is enabled]
+    route --> console[Console when no destination is enabled]
 ```
 
 ## Quick start
@@ -65,36 +80,74 @@ python -m venv .venv
 .venv/bin/python -m pytest
 ```
 
-`--dry-run` prints what it finds and does not open issues.
+`--dry-run` previews selected destinations without creating issues, tickets, notifications or
+local delivery receipts. It still reads enabled vulnerability data sources.
 
 ## Repo layout
 
 | Path | What it holds |
 | --- | --- |
-| `inventory/` | One YAML file per tool |
-| `src/infra_vuln_watch/` | The Python package, one file per job |
+| `inventory/` | One YAML file per product, with versions and ownership per deployment |
+| [`config.yaml`](config.yaml) | Global scan, source, delivery, notification and deadline settings |
+| `src/infra_vuln_watch/` | Packages for CLI, application, configuration, domain, clients, persistence and reporting |
 | `tests/` | Unit tests, run with `pytest` |
 | `pyproject.toml` | Project settings and dependencies |
 | `.github/workflows/` | The scan, started by hand, and the tests |
-| [`docs/`](docs/README.md) | User docs, organised with Diataxis |
+| [`docs/`](docs/README.md) | Human documentation: Diataxis, arc42, C4 and ADRs |
 | [`knowledge/`](knowledge/index.md) | Domain knowledge, as an OKF bundle |
-| [`arc42/`](arc42/README.md) | Architecture description |
-| [`adr/`](adr/README.md) | Architecture decision records |
+| [`docs/arc42/`](docs/arc42/README.md) | Architecture description in numbered sections |
+| [`docs/c4/`](docs/c4/README.md) | Context, container, component and deployment views |
+| [`docs/adr/`](docs/adr/README.md) | Architecture decision records |
 
 ## Documentation
 
 Each standard answers a different question, so each kind of content has one clear home
-([ADR 0005](adr/0005-organise-docs-with-diataxis-okf-arc42-and-adr.md)).
+([ADR 0018](docs/adr/0018-organise-documentation-under-docs.md)).
 
 | Question | Standard | Start here |
 | --- | --- | --- |
-| How do I use it? | Diataxis | [Your first scan](docs/tutorials/first-scan.md) |
-| How is it built? | arc42 | [Architecture](arc42/README.md) |
-| Why was it built this way? | ADRs | [Decision list](adr/README.md) |
+| How do I use it? | Diataxis | [Your first scan](docs/diataxis/tutorials/first-scan.md) |
+| How is it built? | arc42 + C4 | [Architecture](docs/arc42/README.md) |
+| Why was it built this way? | ADRs | [Decision list](docs/adr/README.md) |
 | What should I know about the domain? | OKF | [Knowledge bundle](knowledge/index.md) |
 
 ## Data sources
 
-This product uses data from the NVD API but is not endorsed or certified by the NVD. EPSS scores
-come from [FIRST](https://www.first.org/epss/), and known exploited data comes from the
-[CISA KEV catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog).
+- CVE records come from the [NVD API](https://nvd.nist.gov/developers), subject to its
+  [terms of use](https://nvd.nist.gov/developers/terms-of-use).
+- EPSS scores come from [FIRST's EPSS project](https://www.first.org/epss/).
+  See FIRST's [usage and attribution guidance](https://www.first.org/epss/faq).
+- Known exploited vulnerability data comes from the
+  [CISA KEV catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog).
+
+NVD API access is subject to NVD's terms of use and published rate limits. The scanner spaces
+requests and retries temporary failures, but access may still be rate limited or blocked.
+The attribution notice does not guarantee continued API access or exempt users from those
+terms. Avoid running multiple scans with a shared API key or outbound IP in a way that
+exceeds the applicable limits.
+
+Version matching, issue summaries and fix dates are generated by this project. They are not
+official determinations or remediation deadlines issued by those organisations. CISA's own
+due dates, when available, are shown separately in the issue details.
+
+Third-party data, dependencies and referenced materials retain their respective rights and
+applicable licenses or terms. The project's license does not relicense them. Names and
+trademarks belong to their respective owners; their use identifies sources and products
+and does not imply sponsorship or endorsement.
+
+## License and disclaimer
+
+The project's original code and documentation are provided under the [MIT License](LICENSE),
+which permits use, modification and redistribution subject to retaining its copyright and
+permission notice. No affiliation with or license to third-party trademarks is granted.
+See [third-party notices](THIRD_PARTY_NOTICES.md) for dependency licenses and data attribution.
+
+Dependabot is configured to check Python dependencies and GitHub Actions weekly once the
+configuration is merged to the default branch. Dependency alerts and automatic security
+updates also depend on the repository's GitHub security settings.
+
+The software is provided **as is**, without warranty, as set out in the license. Vulnerability
+data and matching results may be incomplete, delayed or incorrect. An empty scan does not
+establish that a system is secure. Verify findings and upgrade guidance against vendor
+advisories and your environment before acting. You are responsible for deployment and
+remediation decisions.
