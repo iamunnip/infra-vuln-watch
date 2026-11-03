@@ -1,8 +1,7 @@
 name: tests
 
+# Runs when a pull request is opened or updated, not when it is merged.
 on:
-  push:
-    branches: [main, develop]
   pull_request:
 
 permissions:

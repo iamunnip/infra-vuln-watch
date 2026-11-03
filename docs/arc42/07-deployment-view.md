@@ -2,7 +2,8 @@
 
 See the [Deployment diagram](../c4/deployment.md).
 
-`.github/workflows/tests.yml` runs the tests on each push and pull request.
+`.github/workflows/tests.yml` runs lint, type checks, tests with coverage and the documentation check when a
+pull request is opened or updated. It does not run on a merge, so protect `main` by merging only passing pull requests.
 
 `.github/workflows/scan.yml` runs the scan on a GitHub hosted runner when someone starts it, one
 scan at a time.

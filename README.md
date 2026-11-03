@@ -1,6 +1,6 @@
 # infra-vuln-watch
 
-[![tests](https://github.com/iamunnip/infra-vuln-watch/actions/workflows/tests.yml/badge.svg)](https://github.com/iamunnip/infra-vuln-watch/actions/workflows/tests.yml)
+[![tests](https://github.com/iamunnip/infra-vuln-watch/actions/workflows/tests.yml/badge.svg?event=pull_request)](https://github.com/iamunnip/infra-vuln-watch/actions/workflows/tests.yml)
 
 CVE scan of infrastructure inventory.
 
