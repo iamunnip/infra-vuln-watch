@@ -36,6 +36,16 @@ The tests use mocks and cannot reach a network, because `tests/conftest.py` fail
 `tests/test_delivery_mock.py` runs the real CLI and clients against fake GitHub, Jira, Slack, NVD, EPSS
 and CISA KEV services, including failures, rate limits and repeat scans.
 
+`tests/test_mermaid.py` parses every Mermaid diagram in the repository's Markdown files, so a diagram GitHub
+cannot draw fails the tests. It needs Node.js and the parser, installed once with this command:
+
+```bash
+npm ci --ignore-scripts --prefix scripts/mermaid
+```
+
+Without them, the parser tests skip on your machine and fail in CI. A check for semicolons in sequence
+diagram messages, the mistake that has broken a diagram here, always runs.
+
 Run these from the top folder of the repo.
 
 ```bash

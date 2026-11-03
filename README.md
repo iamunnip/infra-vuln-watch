@@ -1,6 +1,6 @@
 # infra-vuln-watch
 
-[![tests](https://github.com/iamunnip/infra-vuln-watch/actions/workflows/tests.yml/badge.svg)](https://github.com/iamunnip/infra-vuln-watch/actions/workflows/tests.yml)
+[![tests](https://github.com/iamunnip/infra-vuln-watch/actions/workflows/tests.yml/badge.svg?event=pull_request)](https://github.com/iamunnip/infra-vuln-watch/actions/workflows/tests.yml)
 
 CVE scan of infrastructure inventory.
 
@@ -153,7 +153,7 @@ which permits use, modification and redistribution subject to retaining its copy
 permission notice. No affiliation with or license to third-party trademarks is granted.
 See [third-party notices](THIRD_PARTY_NOTICES.md) for dependency licenses and data attribution.
 
-The scan workflow installs hash-locked packages from `requirements.txt`. Dependabot is configured to check Python dependencies and GitHub Actions weekly once the
+The scan workflow installs hash-locked packages from `requirements.txt`. Dependabot is configured to check Python and npm dependencies and GitHub Actions weekly once the
 configuration is merged to the default branch. Dependency alerts and automatic security
 updates also depend on the repository's GitHub security settings.
 

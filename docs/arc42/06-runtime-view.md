@@ -14,7 +14,7 @@ sequenceDiagram
     participant F as Local receipts
     U->>A: Start scan
     A->>M: Start CLI with config and inventory
-    M->>M: Expand deployments; merge global, tool and deployment settings; skip disabled targets
+    M->>M: Expand deployments, merge settings from each layer, then skip disabled targets
     opt Enabled non-preview destinations
         M->>T: Initialise labels and load each destination's history
         M->>F: Load Slack receipts if enabled and not repeating
@@ -54,7 +54,7 @@ sequenceDiagram
             M->>T: Label tickets whose delivery is only in the receipt file
         end
     end
-    M-->>A: Exit 1 on source, setup or delivery failure; otherwise 0
+    M-->>A: Exit 1 on source, setup or delivery failure, otherwise 0
 ```
 
 Invalid configuration or inventory, missing required credentials, corrupt Slack state or an

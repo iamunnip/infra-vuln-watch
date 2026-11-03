@@ -66,4 +66,6 @@ With the existing virtual environment, use `.venv/bin/python` in place of `pytho
 regenerate it when a runtime dependency changes; see the
 [command-line reference](docs/diataxis/reference/command-line.md#tests).
 The documentation check validates local Markdown links and headings plus repository OKF
-metadata conventions. It does not check remote URLs or render Mermaid diagrams.
+metadata conventions. It does not check remote URLs. `tests/test_mermaid.py` parses every Mermaid
+diagram with the real parser. That needs Node.js and `npm ci --ignore-scripts` in `scripts/mermaid`.
+Without them it skips locally, apart from a semicolon check, and fails in CI.
