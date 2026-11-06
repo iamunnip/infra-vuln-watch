@@ -1,6 +1,9 @@
-# 6. Runtime view
+# Runtime
 
-### Scan and reporting
+Scope: the order of work during a scan, and what people do after an issue opens.
+C4 calls these dynamic views; they use Mermaid sequence and state diagrams.
+
+## Scan and reporting
 
 ```mermaid
 sequenceDiagram
@@ -76,7 +79,7 @@ notification retries after successful ticket creation. Remote writes are not aut
 once when a service rate limits them. Ambiguous timeouts can cause duplicates on a later run, as can a lost
 receipt when Slack has no tracker.
 
-### Fixing a vulnerability
+## Fixing a vulnerability
 
 The scan stops at opening the issue, and people do the rest
 ([ADR 0013](../adr/0013-how-a-vulnerability-gets-fixed.md)).
@@ -98,7 +101,7 @@ sequenceDiagram
     S->>R: Next scan reads the new version
 ```
 
-### Life of an issue
+## Life of an issue
 
 ```mermaid
 stateDiagram-v2
@@ -112,9 +115,9 @@ stateDiagram-v2
     NotPlanned --> [*]
 ```
 
-[Architecture index](README.md)
-
 Different deployments are evaluated independently, including ownership and fix deadlines. A
 production finding cannot be suppressed by staging's ticket or notification receipt. IDs remain
 stable across version changes. Legacy unscoped history is retained but is not automatically
 mapped to a newly introduced deployment.
+
+[View index](README.md)

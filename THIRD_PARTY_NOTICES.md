@@ -41,7 +41,7 @@ this project's analysis, not official determinations by those sources.
 
 ## Documentation frameworks
 
-The project uses [arc42](https://arc42.org/overview/), [C4](https://c4model.com/diagrams),
+The project uses [C4](https://c4model.com/diagrams),
 [Diataxis](https://diataxis.fr/) and
 [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
 to organise its own descriptions and domain notes. Referencing or following these frameworks

@@ -1,7 +1,7 @@
 # Working in infra-vuln-watch
 
 Start with [README.md](README.md), then the [documentation index](docs/README.md) and
-[architecture index](docs/arc42/README.md). Read the relevant source and tests before editing.
+[architecture views](docs/c4/README.md). Read the relevant source and tests before editing.
 
 ## Where information belongs
 
@@ -9,8 +9,9 @@ Start with [README.md](README.md), then the [documentation index](docs/README.md
   `index.md` and `log.md` conventions. Use relative links, because GitHub cannot find leading `/` links.
   Update `knowledge/log.md` when changing domain content.
 - `docs/diataxis/`: user tutorials, how-to guides, reference and explanations.
-- `docs/arc42/`: architecture explanations in 12 numbered sections.
-- `docs/c4/`: one copy of each context, container, component and deployment diagram.
+- `docs/c4/`: one page per context, container, component, deployment and runtime view, holding
+  the diagram and its explanation. Goals, principles and risks live in
+  `docs/diataxis/explanation/design-and-risks.md`.
 - `docs/adr/`: historical decisions. Add a new ADR for significant changes and update the
   index with links to replacements; preserve the original accepted decision's content.
 - `src/infra_vuln_watch/`: Python CLI implementation; `tests/`: pytest tests.
@@ -40,8 +41,8 @@ routing, markers and receipts; do not key multi-deployment routes by product nam
 
 Keep only `__init__.py` and `__main__.py` at the package root. Update `pyproject.toml` and
 reinstall the editable package when moving a console entry point. Changes to external
-integrations, module responsibilities or workflows must update the corresponding C4 view and
-arc42 section in the same PR. Keep runtime sequences in arc42 section 6. Update user-facing
+integrations, module responsibilities or workflows must update the corresponding C4 view in the
+same PR. Keep runtime sequences in `docs/c4/runtime.md`. Update user-facing
 reference or guides when commands, inventory or issue behaviour changes.
 
 The scanner's normal mode can write GitHub labels and issues, Jira Cloud tickets and Slack

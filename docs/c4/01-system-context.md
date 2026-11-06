@@ -26,4 +26,12 @@ flowchart LR
     owner -->|Reads notifications| slack
 ```
 
-See [the arc42 explanation](../arc42/03-context-and-scope.md) and the [view index](README.md).
+GitHub Actions starts the scanner on behalf of the maintainer. Tool owners remediate the real
+infrastructure outside this system and update the recorded version through a pull request. Findings can be routed to GitHub Issues,
+Jira Cloud, Slack, or console output according to global and tool settings.
+The scanner never connects to the installed tools.
+
+Out of scope: fixing vulnerabilities, scanning running systems, and scanning libraries inside
+a tool.
+
+[View index](README.md)

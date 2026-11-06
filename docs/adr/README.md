@@ -10,7 +10,7 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0002](0002-search-nvd-twice-and-compare-versions-locally.md) | Search NVD twice and compare versions locally | Accepted |
 | [0003](0003-report-unknown-results.md) | Report results we cannot confirm | Accepted |
 | [0004](0004-use-github-issues-as-state.md) | Use GitHub Issues as the only state | Extended by [0019](0019-layer-source-and-configure-scans-and-delivery.md) |
-| [0005](0005-organise-docs-with-diataxis-okf-arc42-and-adr.md) | Organise docs with Diataxis, OKF, arc42 and ADRs | Directory layout amended by [0018](0018-organise-documentation-under-docs.md) |
+| [0005](0005-organise-docs-with-diataxis-okf-arc42-and-adr.md) | Organise docs with Diataxis, OKF, arc42 and ADRs | Directory layout amended by [0018](0018-organise-documentation-under-docs.md); arc42 dropped by [0036](0036-drop-arc42-and-keep-c4-diataxis-okf-and-adrs.md) |
 | [0006](0006-use-the-python-src-layout.md) | Use the Python src layout | Accepted |
 | [0007](0007-scan-twice-a-day.md) | Scan twice a day | Replaced by [0016](0016-run-the-scan-by-hand.md) |
 | [0008](0008-issue-title-format.md) | Issue title format | Replaced by [0009](0009-issue-title-and-labels.md) |
@@ -22,8 +22,8 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0014](0014-keep-full-product-searches.md) | Keep full product searches instead of date filtered ones | Accepted |
 | [0015](0015-read-nvd-and-not-cve-org.md) | Read NVD and not CVE.org | Accepted |
 | [0016](0016-run-the-scan-by-hand.md) | Run the scan by hand | Accepted |
-| [0017](0017-use-c4-views-within-arc42.md) | Use C4 views within arc42 | Diagram location amended by [0018](0018-organise-documentation-under-docs.md) |
-| [0018](0018-organise-documentation-under-docs.md) | Organise documentation under docs | Accepted |
+| [0017](0017-use-c4-views-within-arc42.md) | Use C4 views within arc42 | Diagram location amended by [0018](0018-organise-documentation-under-docs.md); replaced by [0036](0036-drop-arc42-and-keep-c4-diataxis-okf-and-adrs.md) |
+| [0018](0018-organise-documentation-under-docs.md) | Organise documentation under docs | arc42 directory removed by [0036](0036-drop-arc42-and-keep-c4-diataxis-okf-and-adrs.md) |
 | [0019](0019-layer-source-and-configure-scans-and-delivery.md) | Layer source modules and configure scans and delivery | Severity filter scope amended by [0026](0026-known-exploited-cves-pass-severity-filters.md); Jira description format amended by [0029](0029-format-jira-tickets-as-rich-text.md) |
 | [0020](0020-group-source-by-responsibility.md) | Group source modules by responsibility | Accepted |
 | [0021](0021-track-deployments-independently.md) | Track deployments independently | Accepted |
@@ -41,3 +41,4 @@ they are accepted. To change a decision, add a new record that replaces the old 
 | [0033](0033-notify-slack-about-ticket-updates.md) | Notify Slack about ticket updates | Accepted |
 | [0034](0034-parse-mermaid-diagrams-in-tests.md) | Parse Mermaid diagrams in tests | Accepted |
 | [0035](0035-use-relative-links-in-the-knowledge-bundle.md) | Use relative links in the knowledge bundle | Accepted |
+| [0036](0036-drop-arc42-and-keep-c4-diataxis-okf-and-adrs.md) | Drop arc42 and keep C4, Diataxis, OKF and ADRs | Accepted |

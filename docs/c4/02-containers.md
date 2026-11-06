@@ -30,4 +30,10 @@ flowchart LR
     scanner -->|Optionally posts plain-text webhook payloads via HTTPS JSON| slack
 ```
 
-See [the arc42 explanation](../arc42/05-building-block-view.md) and the [view index](README.md).
+The scanner is one process. Its modules are components within that process. Inventory files
+are checked out onto the runner before execution; Git keeps their history. GitHub Issues and/or Jira Cloud hold ticket history, including closed findings. Optional Slack
+receipts live in a local JSON file persisted between runs. There is no application database.
+In local dry runs the same scanner reads inventory and external risk sources, prints finding
+titles, and skips every output API operation and receipt write.
+
+[View index](README.md)
