@@ -54,7 +54,7 @@ def parse_errors():
 
 def test_diagrams_are_found_in_every_documentation_area():
     names = [name for name, _ in DIAGRAMS]
-    for expected in ('docs/arc42/06-runtime-view.md', 'docs/c4/', 'docs/adr/', 'docs/diataxis/', 'README.md', 'knowledge/'):
+    for expected in ('docs/c4/runtime.md', 'docs/c4/', 'docs/adr/', 'docs/diataxis/', 'README.md', 'knowledge/'):
         assert any(name.startswith(expected) for name in names), expected
 
 

@@ -79,4 +79,110 @@ flowchart TD
     slack -->|Posts incoming webhook| slackapi
 ```
 
-See [the arc42 explanation](../arc42/05-building-block-view.md) and the [view index](README.md).
+## Modules
+
+The package lives in `src/infra_vuln_watch/`, with tests in `tests/`. See
+[ADR 0006](../adr/0006-use-the-python-src-layout.md).
+
+| File | Job |
+| --- | --- |
+| `__main__.py` | Lets the tool run with `python -m infra_vuln_watch` |
+| `cli/main.py` | Parses CLI options, loads global configuration, validates and resolves tool policy |
+| `application/scanner.py` | Applies scan filters, enriches findings, routes delivery and returns the exit code |
+| `configuration/config.py` | Validates and recursively merges defaults, global settings and tool overrides |
+| `persistence/state.py` | Atomically persists successful Slack notification receipts |
+| `application/router.py` | Routes each finding independently to configured trackers and Slack, and applies ticket updates |
+| `application/ticket_updates.py` | Decides which labels, comments and title an open ticket needs |
+| `clients/rate_limit.py` | Waits once when an output service asks, then marks it as limited |
+| `domain/ignore_list.py` | Reads ignore entries, with their reasons and expiry dates |
+| `reporting/jira_format.py` | Converts a finding's Markdown into Atlassian Document Format |
+| `clients/jira_client.py` | Reads Jira Cloud reporting history, and creates and updates tickets using REST v3 |
+| `clients/slack_client.py` | Sends plain-text Slack webhook payloads and records delivery |
+| `configuration/inventory.py` | Normalises grouped tool metadata, validates files and expands deployment-specific targets |
+| `domain/identity.py` | Defines stable scan target IDs, finding IDs, the shared ticket marker and scoped display names |
+| `clients/nvd_client.py` | Downloads CVEs, with paging, waiting and retries |
+| `domain/version_check.py` | Decides affected, not affected or unknown using names, aliases and reporter statuses, and finds the fix |
+| `domain/cve_details.py` | Pulls the score, description and links out of a CVE |
+| `clients/risk_data.py` | Downloads EPSS scores and the CISA KEV list; `domain/cve_details.py` reads a CVE's KEV entry |
+| `domain/fix_deadline.py` | Works out the fix date from the severity |
+| `reporting/issue_format.py` | Writes the issue title and body, and cleans NVD text |
+| `clients/github_client.py` | Creates labels and issues, updates open issues, and lists what is already reported |
+
+## Package layout
+
+```text
+src/infra_vuln_watch/
+├── __init__.py
+├── __main__.py
+├── application/
+│   ├── __init__.py
+│   ├── router.py
+│   ├── scanner.py
+│   └── ticket_updates.py
+├── cli/
+│   ├── __init__.py
+│   └── main.py
+├── clients/
+│   ├── __init__.py
+│   ├── github_client.py
+│   ├── jira_client.py
+│   ├── nvd_client.py
+│   ├── rate_limit.py
+│   ├── risk_data.py
+│   └── slack_client.py
+├── configuration/
+│   ├── __init__.py
+│   ├── config.py
+│   └── inventory.py
+├── domain/
+│   ├── __init__.py
+│   ├── cve_details.py
+│   ├── fix_deadline.py
+│   ├── identity.py
+│   ├── ignore_list.py
+│   └── version_check.py
+├── persistence/
+│   ├── __init__.py
+│   └── state.py
+└── reporting/
+    ├── __init__.py
+    ├── issue_format.py
+    └── jira_format.py
+```
+
+| Package | Responsibility |
+| --- | --- |
+| `cli/` | Argument parsing and the installed command entry point |
+| `application/` | Scan orchestration and delivery routing |
+| `configuration/` | Global settings, inventory validation and override resolution |
+| `domain/` | Stable finding identities, CVE interpretation, version matching and deadline policy |
+| `clients/` | External HTTP integrations |
+| `persistence/` | Atomic local delivery state |
+| `reporting/` | Finding presentation and sanitisation |
+
+Only package initialisation and `__main__.py` remain at the package root. Domain CVE details
+are shared by scanning and presentation; the output router belongs with application orchestration.
+The installed CLI uses `infra_vuln_watch.cli.main:main`; `python -m infra_vuln_watch` delegates
+to the same function. Reinstall an existing editable installation after entry-point changes:
+
+```bash
+.venv/bin/pip install -e ".[dev]"
+```
+
+Internal import paths changed; CLI options, configuration and finding behaviour are unchanged.
+See [ADR 0020](../adr/0020-group-source-by-responsibility.md), extending
+[ADR 0019](../adr/0019-layer-source-and-configure-scans-and-delivery.md).
+
+Inventory expansion produces one scan target per deployment before global settings are resolved.
+Tool and deployment override mappings merge without injecting defaults, preserving the precedence
+of built-in, global, tool and deployment layers. Each target has its own version and ownership.
+NVD candidates are cached in memory by vendor, product, keyword and source settings, then
+matched separately. Route keys, tracker markers and Slack receipts use the shared identity
+helpers, so different deployments of one product cannot overwrite each other's routes.
+See [ADR 0021](../adr/0021-track-deployments-independently.md).
+
+The recommended inventory groups product metadata under `tool`, alongside `config` and
+`deployments`. Normalisation preserves the existing internal target shape and finding IDs;
+legacy flat documents remain supported. See [ADR 0022](../adr/0022-group-inventory-product-metadata.md).
+
+[View index](README.md)

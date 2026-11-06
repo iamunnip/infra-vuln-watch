@@ -104,21 +104,21 @@ local delivery receipts. It still reads enabled vulnerability data sources.
 | `requirements.txt` | Hash-locked runtime packages installed by the scan workflow |
 | [`SECURITY.md`](SECURITY.md) | How to report a bug in this tool privately |
 | `.github/workflows/` | The scan, started by hand, and the tests |
-| [`docs/`](docs/README.md) | Human documentation: Diataxis, arc42, C4 and ADRs |
+| [`docs/`](docs/README.md) | Human documentation: Diataxis, C4 and ADRs |
 | [`knowledge/`](knowledge/index.md) | Domain knowledge, as an OKF bundle |
-| [`docs/arc42/`](docs/arc42/README.md) | Architecture description in numbered sections |
-| [`docs/c4/`](docs/c4/README.md) | Context, container, component and deployment views |
+| [`docs/c4/`](docs/c4/README.md) | Context, container, component, deployment and runtime views |
 | [`docs/adr/`](docs/adr/README.md) | Architecture decision records |
 
 ## Documentation
 
 Each standard answers a different question, so each kind of content has one clear home
-([ADR 0018](docs/adr/0018-organise-documentation-under-docs.md)).
+([ADR 0018](docs/adr/0018-organise-documentation-under-docs.md),
+[ADR 0036](docs/adr/0036-drop-arc42-and-keep-c4-diataxis-okf-and-adrs.md)).
 
 | Question | Standard | Start here |
 | --- | --- | --- |
 | How do I use it? | Diataxis | [Your first scan](docs/diataxis/tutorials/first-scan.md) |
-| How is it built? | arc42 + C4 | [Architecture](docs/arc42/README.md) |
+| How is it built? | C4 | [Architecture views](docs/c4/README.md) |
 | Why was it built this way? | ADRs | [Decision list](docs/adr/README.md) |
 | What should I know about the domain? | OKF | [Knowledge bundle](knowledge/index.md) |
 
